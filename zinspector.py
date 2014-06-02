@@ -1,3 +1,8 @@
+# zarafa-inspector: A GUI program which allows a user to examine MAPI properties in Zarafa and import and export data.
+#
+# Copyright 2014 Zarafa and contributors, license AGPLv3 (see LICENSE file for details)
+#
+
 #!/usr/bin/env python
 from zinspectorlib import *
 
