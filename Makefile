@@ -1,5 +1,6 @@
 PYQUI := pyuic4
-ifeq ($(which pyqui4),)
+# Support Arch Linux
+ifneq (,$(wildcard /etc/arch-release))
 	PYQUI := python2-pyuic4
 endif
 
