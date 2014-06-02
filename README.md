@@ -3,6 +3,8 @@ Zarafa Inspector
 
 Zarafa Inspector is a GUI application which can be used to "look into" Zarafa. It's similiar to OutlookSpy and MFCMAPI but it's Zarafa specific. (This program isn't actively supported by Zarafa)
 
+![Zarafa-Inspector](https://raw.githubusercontent.com/zarafagroupware/zarafa-inspector/master/images/zarafa-inspector.png "Zarafa-inspector example usage")
+
 Features
 ========
 
