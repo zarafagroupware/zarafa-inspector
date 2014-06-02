@@ -31,10 +31,10 @@ Apart from these Python dependencies the tool only works running zarafa-server.
 Usage
 =====
 
- git clone https://github.com/zarafagroupware/zarafa-inspector.git 
- cd repo 
- make
- python zinspector.py (requires root permissions to connect to the socket for an system session)
+    git clone https://github.com/zarafagroupware/zarafa-inspector.git 
+    cd repo 
+    make
+    python zinspector.py (requires root permissions to connect to the socket for an system session)
 
 Connet to remote server
 =======================
