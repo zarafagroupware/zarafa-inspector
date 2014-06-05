@@ -1,3 +1,8 @@
+# zarafa-inspector: A GUI program which allows a user to examine MAPI properties in Zarafa and import and export data.
+#
+# Copyright 2014 Zarafa and contributors, license AGPLv3 (see LICENSE file for details)
+#
+
 #!/usr/bin/env python
 from zinspectorlib import *
 
@@ -16,6 +21,9 @@ MainWindow = QMainWindow()
 ui = Ui_MainWindow()
 
 def openTree(item):
+    # Hide attachment table
+    ui.recordtableWidget.hide()
+
     folder = item.data(0, Qt.UserRole).toPyObject()
     recordlist = ui.recordlistWidget
     recordlist.clear()
@@ -29,13 +37,15 @@ def openTree(item):
         listItem.setData(Qt.UserRole, record)
         recordlist.addItem(listItem)
 
-    # Add click event for 
+    # Add click event for opening records
     recordlist.itemClicked.connect(openRecord)
 
     # Show MAPI properties of folder
     drawTable(folder.properties())
 
 def openRecord(item):
+    # Hide attachment table
+    ui.recordtableWidget.hide()
     record = item.data(Qt.UserRole).toPyObject()
     drawTable(record.properties())
 
@@ -185,7 +195,7 @@ def onRecordContext(point):
     menu.addAction("Delete Item",deleteItem)
 
     if record.attachments():
-        menu.addAction("Show attachments",showAttachments)
+        menu.addAction("View attachments",showAttachments)
 
     # Show the context menu.
     menu.exec_(ui.recordlistWidget.mapToGlobal(point))
@@ -237,7 +247,6 @@ def openUserStore(tablewidgetitem):
     recordlist.setUniformItemSizes(True)
 
 def drawGAB(server, remoteusers=False):
-    # GAB
     horHeaders = ["Name","Email","Local","Home Server"]
     gabwidget = ui.gabwidget
     gabwidget.setRowCount(len(list(server.users(remote=remoteusers))))
