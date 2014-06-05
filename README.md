@@ -38,7 +38,7 @@ Usage
     make (Needed to generate Python code from the Qt ui file)
     python zinspector.py (requires root permissions to connect to the socket for an system session)
 
-Connet to remote server
+Connect to a remote server
 =======================
 
     python zinspector.py  -s https://serverip:237/zarafa -k /etc/zarafa/ssl/server.pem -p password
