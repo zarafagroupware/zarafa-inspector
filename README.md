@@ -34,8 +34,8 @@ Usage
 =====
 
     git clone https://github.com/zarafagroupware/zarafa-inspector.git 
-    cd repo 
-    make
+    cd zarafa-inspector
+    make (Needed to generate Python code from the Qt ui file)
     python zinspector.py (requires root permissions to connect to the socket for an system session)
 
 Connet to remote server
