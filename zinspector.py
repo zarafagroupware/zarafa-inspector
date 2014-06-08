@@ -55,13 +55,13 @@ def drawTable(properties):
     propertytable = ui.propertytableWidget
 
     for rec in properties:
-        names.append(rec.name)
+        names.append(rec.idname)
         value = rec.value
         if PROP_TYPE(rec.proptag) == PT_BINARY:
             value = bin2hex(rec.value)
         values.append(value)
 
-        types.append(rec.proptype)
+        types.append(rec.typename)
 
     propertytable.setColumnCount(len(mystruct))
     propertytable.setRowCount(len(names))
@@ -107,11 +107,11 @@ def importEML():
         fname.close()
         item = Item(folder, rfc822)
         listItem = QListWidgetItem()
-        if record.subject is None:
+        if item.subject is None:
             listItem.setText("<empty subject>")
         else:
-            listItem.setText(record.subject)
-        listItem.setData(Qt.UserRole, record)
+            listItem.setText(item.subject)
+        listItem.setData(Qt.UserRole, item)
         ui.recordlistWidget.addItem(listItem)
 
 def deleteItem():
@@ -189,7 +189,7 @@ def onRecordContext(point):
     item = ui.recordlistWidget.itemAt(point)
     record = item.data(Qt.UserRole).toPyObject()
 
-    if record.property(PR_MESSAGE_CLASS).get_value().startswith('IPM.Note'):
+    if record.property_(PR_MESSAGE_CLASS).get_value().startswith('IPM.Note'):
         menu.addAction("Save as EML",saveEML)
 
     menu.addAction("Delete Item",deleteItem)
