@@ -15,6 +15,7 @@ The Zarafa Inspector supports:
 * Viewing the properties of a folder
 * Viewing the properties of a record
 * Showing the attachmenttable of a record
+* Showing the recipients of a record
 * Exporting an attachment
 * Exporting an email as EML
 * Exporting a folder as MBOX
