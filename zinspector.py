@@ -178,9 +178,41 @@ def showAttachments():
             newitem.setData(Qt.UserRole, attachment)
             attTable.setItem(n, m, newitem)
             if n == 0:
-                horHeaders.append(prop.name)
+                # setHorizontalHeaderLabels doesn't handle python None, so append 'None'
+                if prop.idname is None:
+                    horHeaders.append('None')
+                else:
+                    horHeaders.append(prop.idname)
 
     attTable.setHorizontalHeaderLabels(horHeaders)
+    attTable.resizeColumnsToContents()
+    attTable.show()
+
+def showRecipients():
+    current = ui.recordlistWidget.currentItem()
+    record = current.data(Qt.UserRole).toPyObject()
+    attTable = ui.recordtableWidget
+    attTable.clear()
+
+    attTable.setRowCount(len(record.recipients()))
+    attTable.setSizePolicy(QSizePolicy(QSizePolicy.Preferred,QSizePolicy.Preferred))
+    horHeaders = []
+
+    for n, recipient in enumerate(record.recipients()):
+        for m, prop in enumerate(recipient):
+            if prop.typename == PT_BINARY:
+                newitem = QTableWidgetItem(bin2hex(prop.value))
+            else:
+                newitem = QTableWidgetItem(str(prop.value))
+            attTable.setItem(n, m, newitem)
+            if n == 0:
+                # setHorizontalHeaderLabels doesn't handle python None, so append 'None'
+                if prop.idname is None:
+                    horHeaders.append('None')
+                else:
+                    horHeaders.append(prop.idname)
+    attTable.setHorizontalHeaderLabels(horHeaders)
+    attTable.setColumnCount(len(horHeaders))
     attTable.resizeColumnsToContents()
     attTable.show()
 
@@ -196,6 +228,8 @@ def onRecordContext(point):
 
     if record.attachments():
         menu.addAction("View attachments",showAttachments)
+
+    menu.addAction("View recipients",showRecipients)
 
     # Show the context menu.
     menu.exec_(ui.recordlistWidget.mapToGlobal(point))
