@@ -105,7 +105,7 @@ def importEML():
         fname = open(filename, 'r')
         rfc822 = fname.read()
         fname.close()
-        item = Item(folder, rfc822)
+        item = folder.create_item(eml=rfc822)
         listItem = QListWidgetItem()
         if item.subject is None:
             listItem.setText("<empty subject>")
