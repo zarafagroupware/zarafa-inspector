@@ -13,7 +13,7 @@ from PyQt4.QtCore import *
 import sys
 
 import zarafa
-from zarafa import Folder, Item
+from zarafa import Folder
 from MAPI.Util import *
 
 app = QApplication(sys.argv)
@@ -55,7 +55,10 @@ def drawTable(properties):
     propertytable = ui.propertytableWidget
 
     for rec in properties:
-        names.append(rec.idname)
+        if rec.idname is None:
+            names.append(rec.name)
+        else:
+            names.append(rec.idname)
         value = rec.value
         if PROP_TYPE(rec.proptag) == PT_BINARY:
             value = bin2hex(rec.value)
@@ -70,7 +73,7 @@ def drawTable(properties):
         horHeaders.append(key)
         for m, value in enumerate(mystruct[key]):
             newitem = QTableWidgetItem(str(value))
-            newitem.setFlags(Qt.ItemIsEnabled)
+            newitem.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
             propertytable.setItem(m, n, newitem)
 
     propertytable.resizeColumnsToContents()
@@ -174,7 +177,7 @@ def showAttachments():
                 newitem = QTableWidgetItem(bin2hex(prop.value))
             else:
                 newitem = QTableWidgetItem(str(prop.value))
-            newitem.setFlags(Qt.ItemIsEnabled)
+            newitem.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
             newitem.setData(Qt.UserRole, attachment)
             attTable.setItem(n, m, newitem)
             if n == 0:
@@ -298,7 +301,7 @@ def drawGAB(server, remoteusers=False):
             elif m == 3:
                 newitem = QTableWidgetItem(user.home_server)
 
-            newitem.setFlags(Qt.ItemIsEnabled)
+            newitem.setFlags(Qt.ItemIsEnabled | Qt.ItemIsEditable)
             newitem.setData(Qt.UserRole, user)
             gabwidget.setItem(n, m, newitem)
 
