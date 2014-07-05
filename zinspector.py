@@ -224,7 +224,7 @@ def onRecordContext(point):
     item = ui.recordlistWidget.itemAt(point)
     record = item.data(Qt.UserRole).toPyObject()
 
-    if record.property_(PR_MESSAGE_CLASS).get_value().startswith('IPM.Note'):
+    if record.prop(PR_MESSAGE_CLASS).get_value().startswith('IPM.Note'):
         menu.addAction("Save as EML",saveEML)
 
     menu.addAction("Delete Item",deleteItem)
