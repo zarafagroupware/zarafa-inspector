@@ -261,6 +261,9 @@ def openUserStore(tablewidgetitem):
 
         item = QTreeWidgetItem(parent, [folder.name])
         item.setData(0, Qt.UserRole, folder)
+        if folder.name == "IPM_SUBTREE":
+            foldertree.setItemExpanded(item, True)
+
         folders.append(item)
 
     # Setup contextmenu's
