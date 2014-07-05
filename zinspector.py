@@ -199,23 +199,15 @@ def showRecipients():
 
     attTable.setRowCount(len(record.recipients()))
     attTable.setSizePolicy(QSizePolicy(QSizePolicy.Preferred,QSizePolicy.Preferred))
-    horHeaders = []
 
+    props = ['email','addrtype','name','entryid']
     for n, recipient in enumerate(record.recipients()):
-        for m, prop in enumerate(recipient):
-            if prop.typename == PT_BINARY:
-                newitem = QTableWidgetItem(bin2hex(prop.value))
-            else:
-                newitem = QTableWidgetItem(str(prop.value))
+        for m, prop in enumerate(props):
+            newitem = QTableWidgetItem(str(getattr(recipient,prop)))
             attTable.setItem(n, m, newitem)
-            if n == 0:
-                # setHorizontalHeaderLabels doesn't handle python None, so append 'None'
-                if prop.idname is None:
-                    horHeaders.append('None')
-                else:
-                    horHeaders.append(prop.idname)
-    attTable.setHorizontalHeaderLabels(horHeaders)
-    attTable.setColumnCount(len(horHeaders))
+
+    attTable.setHorizontalHeaderLabels(props)
+    attTable.setColumnCount(len(props))
     attTable.resizeColumnsToContents()
     attTable.show()
 
