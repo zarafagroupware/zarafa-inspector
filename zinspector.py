@@ -252,7 +252,7 @@ def openUserStore(tablewidgetitem):
     foldertree = ui.foldertreeWidget
     foldertree.clear()
     foldertree.itemClicked.connect(openTree)
-    foldertree.parent = QTreeWidgetItem(foldertree, ["User Store"])
+    foldertree.parent = QTreeWidgetItem(foldertree, [user.name])
     foldertree.setItemExpanded(foldertree.parent, True)
 
     folders = []
