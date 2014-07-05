@@ -279,23 +279,15 @@ def openUserStore(tablewidgetitem):
     recordlist.setUniformItemSizes(True)
 
 def drawGAB(server, remoteusers=False):
-    horHeaders = ["Name","Email","Local","Home Server"]
+    horHeaders = ["name","fullname","email"]
     gabwidget = ui.gabwidget
     gabwidget.setRowCount(len(list(server.users(remote=remoteusers))))
     gabwidget.setColumnCount(len(horHeaders))
 
     # TODO: Refactor and seperate function
     for n, user in enumerate(list(server.users(remote=remoteusers))):
-        for m in range(0,4):
-            if m == 0:
-                newitem = QTableWidgetItem(user.name)
-            elif m == 1:
-                newitem = QTableWidgetItem(user.email)
-            elif m == 2:
-                newitem = QTableWidgetItem(str(user.local))
-            elif m == 3:
-                newitem = QTableWidgetItem(user.home_server)
-
+        for m, prop in enumerate(horHeaders):
+            newitem = QTableWidgetItem(str(getattr(user,prop)))
             newitem.setFlags(Qt.ItemIsEnabled | Qt.ItemIsEditable)
             newitem.setData(Qt.UserRole, user)
             gabwidget.setItem(n, m, newitem)
