@@ -41,13 +41,13 @@ def openTree(item):
     recordlist.itemClicked.connect(openRecord)
 
     # Show MAPI properties of folder
-    drawTable(folder.properties())
+    drawTable(folder.props())
 
 def openRecord(item):
     # Hide attachment table
     ui.recordtableWidget.hide()
     record = item.data(Qt.UserRole).toPyObject()
-    drawTable(record.properties())
+    drawTable(record.props())
 
 def drawTable(properties):
     names, values, types, horHeaders = [], [], [], []
@@ -172,7 +172,7 @@ def showAttachments():
     attTable.setSizePolicy(QSizePolicy(QSizePolicy.Preferred,QSizePolicy.Preferred))
     horHeaders = []
     for n, attachment in enumerate(record.attachments()):
-        for m, prop in enumerate(attachment.properties()):
+        for m, prop in enumerate(attachment.props()):
             if PROP_TYPE(prop.proptag) == PT_BINARY:
                 newitem = QTableWidgetItem(bin2hex(prop.value))
             else:
@@ -252,7 +252,7 @@ def openUserStore(tablewidgetitem):
     foldertree = ui.foldertreeWidget
     foldertree.clear()
     foldertree.itemClicked.connect(openTree)
-    foldertree.parent = QTreeWidgetItem(foldertree, ["Inbox"])
+    foldertree.parent = QTreeWidgetItem(foldertree, ["User Store"])
     foldertree.setItemExpanded(foldertree.parent, True)
 
     folders = []
@@ -260,7 +260,7 @@ def openUserStore(tablewidgetitem):
         # If folder.depth is not null, we must find the parent
         parent = foldertree.parent
         if folder.depth != 0:
-            parentid = HrGetOneProp(folder.mapifolder, PR_PARENT_ENTRYID).Value
+            parentid = bin2hex(HrGetOneProp(folder.mapifolder, PR_PARENT_ENTRYID).Value)
             for treewidget in folders:
                 treewidgetfolder = treewidget.data(0, Qt.UserRole).toPyObject()
                 if treewidgetfolder.entryid == parentid:
