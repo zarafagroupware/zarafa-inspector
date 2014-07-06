@@ -19,6 +19,7 @@ The Zarafa Inspector supports:
 * Exporting an attachment
 * Exporting an email as EML
 * Exporting a folder as MBOX
+* Viewing zarafa-stats tables
 
 Dependencies
 ============
