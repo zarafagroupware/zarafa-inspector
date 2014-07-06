@@ -23,7 +23,7 @@
      <verstretch>0</verstretch>
     </sizepolicy>
    </property>
-   <layout class="QVBoxLayout" name="verticalLayout_2">
+   <layout class="QVBoxLayout" name="verticalLayout_4">
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
@@ -108,6 +108,36 @@
         </item>
        </layout>
       </widget>
+      <widget class="QWidget" name="statstab">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <attribute name="title">
+        <string>Stats</string>
+       </attribute>
+       <widget class="QWidget" name="verticalLayoutWidget">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>9</y>
+          <width>781</width>
+          <height>811</height>
+         </rect>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout_2">
+         <item>
+          <widget class="QTableWidget" name="statstableWidget">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </widget>
      </widget>
     </item>
    </layout>
@@ -128,7 +158,18 @@
     <addaction name="actionQuit"/>
     <addaction name="actionSync"/>
    </widget>
+   <widget class="QMenu" name="menuStats">
+    <property name="title">
+     <string>Stats</string>
+    </property>
+    <addaction name="actionSystem"/>
+    <addaction name="actionServers"/>
+    <addaction name="actionSessions"/>
+    <addaction name="actionUsers"/>
+    <addaction name="actionCompany"/>
+   </widget>
    <addaction name="menuFile"/>
+   <addaction name="menuStats"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionQuit">
@@ -145,6 +186,31 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+S</string>
+   </property>
+  </action>
+  <action name="actionSystem">
+   <property name="text">
+    <string>System</string>
+   </property>
+  </action>
+  <action name="actionServers">
+   <property name="text">
+    <string>Servers</string>
+   </property>
+  </action>
+  <action name="actionSessions">
+   <property name="text">
+    <string>Sessions</string>
+   </property>
+  </action>
+  <action name="actionUsers">
+   <property name="text">
+    <string>Users</string>
+   </property>
+  </action>
+  <action name="actionCompany">
+   <property name="text">
+    <string>Company</string>
    </property>
   </action>
  </widget>

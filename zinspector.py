@@ -274,12 +274,22 @@ def drawTableWidget(table, header, data):
     table.resizeColumnsToContents()
     table.show()
 
+def drawStatsTable(statsTable):
+    ui.tabWidget.setCurrentIndex(2)
+    table = server.table(statsTable)
+    drawTableWidget(ui.statstableWidget, table.header, table.data())
+
 if __name__ == "__main__":
     ui.setupUi(MainWindow)
 
     # connect to server
     server = zarafa.Server()
+    # Stats tab
+    ui.actionUsers.triggered.connect(lambda: drawStatsTable(PR_EC_STATSTABLE_USERS))
+    ui.actionSystem.triggered.connect(lambda: drawStatsTable(PR_EC_STATSTABLE_SYSTEM))
+    ui.actionServers.triggered.connect(lambda: drawStatsTable(PR_EC_STATSTABLE_SERVERS))
+    ui.actionSessions.triggered.connect(lambda: drawStatsTable(PR_EC_STATSTABLE_SESSIONS))
+    ui.actionCompany.triggered.connect(lambda: drawStatsTable(PR_EC_STATSTABLE_COMPANY))
     drawGAB(server)
     MainWindow.show()
     sys.exit(app.exec_())
-
