@@ -15,6 +15,7 @@ import sys
 import zarafa
 from zarafa import Folder
 from MAPI.Util import *
+from MAPI.Tags import *
 
 app = QApplication(sys.argv)
 MainWindow = QMainWindow()
@@ -50,35 +51,14 @@ def openRecord(item):
     drawTable(record.props())
 
 def drawTable(properties):
-    names, values, types, horHeaders = [], [], [], []
-    mystruct = { 'Property' : names, 'Type' : types, 'Value' : values }
+    headers = ["Property", "Type", "Value"]
     propertytable = ui.propertytableWidget
+    # Convert list of properties to [[prop, type, value]]
+    data = []
+    for prop in properties:
+        data.append([prop.idname,prop.typename,prop.value])
 
-    for rec in properties:
-        if rec.idname is None:
-            names.append(rec.name)
-        else:
-            names.append(rec.idname)
-        value = rec.value
-        if PROP_TYPE(rec.proptag) == PT_BINARY:
-            value = bin2hex(rec.value)
-        values.append(value)
-
-        types.append(rec.typename)
-
-    propertytable.setColumnCount(len(mystruct))
-    propertytable.setRowCount(len(names))
-
-    for n, key in enumerate(mystruct):
-        horHeaders.append(key)
-        for m, value in enumerate(mystruct[key]):
-            newitem = QTableWidgetItem(str(value))
-            newitem.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
-            propertytable.setItem(m, n, newitem)
-
-    propertytable.resizeColumnsToContents()
-    propertytable.setHorizontalHeaderLabels(horHeaders)
-    propertytable.show()
+    drawTableWidget(propertytable, headers, data)
 
 def saveMBOX():
     current = ui.foldertreeWidget.currentItem()
@@ -194,22 +174,12 @@ def showAttachments():
 def showRecipients():
     current = ui.recordlistWidget.currentItem()
     record = current.data(Qt.UserRole).toPyObject()
-    attTable = ui.recordtableWidget
-    attTable.clear()
-
-    attTable.setRowCount(len(record.recipients()))
-    attTable.setSizePolicy(QSizePolicy(QSizePolicy.Preferred,QSizePolicy.Preferred))
 
     props = ['email','addrtype','name','entryid']
-    for n, recipient in enumerate(record.recipients()):
-        for m, prop in enumerate(props):
-            newitem = QTableWidgetItem(str(getattr(recipient,prop)))
-            attTable.setItem(n, m, newitem)
-
-    attTable.setHorizontalHeaderLabels(props)
-    attTable.setColumnCount(len(props))
-    attTable.resizeColumnsToContents()
-    attTable.show()
+    data = []
+    for recipient in record.recipients():
+        data.append([getattr(recipient,prop) for prop in props])
+    drawTableWidget(ui.recordtableWidget, props, data)
 
 def onRecordContext(point):
     menu = QMenu("Menu",ui.recordlistWidget)
@@ -240,7 +210,9 @@ def onFolderContext(point):
     menu.exec_(ui.foldertreeWidget.mapToGlobal(point))
 
 def openUserStore(tablewidgetitem):
-    user = tablewidgetitem.data(Qt.UserRole).toPyObject()
+    userEntry = ui.gabwidget.item(tablewidgetitem.row(), 0)
+    user = server.user(userEntry.text())
+
     foldertree = ui.foldertreeWidget
     foldertree.clear()
     foldertree.itemClicked.connect(openTree)
@@ -279,36 +251,35 @@ def openUserStore(tablewidgetitem):
     recordlist.setUniformItemSizes(True)
 
 def drawGAB(server, remoteusers=False):
-    horHeaders = ["name","fullname","email"]
-    gabwidget = ui.gabwidget
-    gabwidget.setRowCount(len(list(server.users(remote=remoteusers))))
-    gabwidget.setColumnCount(len(horHeaders))
+    headers = ["name","fullname","email"]
+    data = []
+    for user in server.users(remote=remoteusers):
+        data.append([getattr(user,prop) for prop in headers])
+    drawTableWidget(ui.gabwidget,headers,data)
 
-    # TODO: Refactor and seperate function
-    for n, user in enumerate(list(server.users(remote=remoteusers))):
-        for m, prop in enumerate(horHeaders):
-            newitem = QTableWidgetItem(str(getattr(user,prop)))
-            newitem.setFlags(Qt.ItemIsEnabled | Qt.ItemIsEditable)
-            newitem.setData(Qt.UserRole, user)
-            gabwidget.setItem(n, m, newitem)
-
-    gabwidget.setSizePolicy(QSizePolicy(QSizePolicy.Preferred,QSizePolicy.Preferred))
-    gabwidget.setHorizontalHeaderLabels(horHeaders)
-    gabwidget.resizeColumnsToContents()
-    gabwidget.show()
-    gabwidget.itemClicked.connect(openUserStore)
-
+    ui.gabwidget.itemClicked.connect(openUserStore)
     # hide recordtableWidget by default
     ui.recordtableWidget.hide()
+
+def drawTableWidget(table, header, data):
+    table.setRowCount(len(data))
+    table.setColumnCount(len(header))
+
+    for n, row in enumerate(data):
+        for m, column in enumerate(row):
+            newitem = QTableWidgetItem(str(column))
+            table.setItem(n, m, newitem)
+
+    table.setHorizontalHeaderLabels(header)
+    table.resizeColumnsToContents()
+    table.show()
 
 if __name__ == "__main__":
     ui.setupUi(MainWindow)
 
     # connect to server
     server = zarafa.Server()
-
     drawGAB(server)
-
     MainWindow.show()
     sys.exit(app.exec_())
 
