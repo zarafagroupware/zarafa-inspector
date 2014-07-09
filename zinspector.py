@@ -21,14 +21,17 @@ app = QApplication(sys.argv)
 MainWindow = QMainWindow()
 ui = Ui_MainWindow()
 
-def openTree(item):
+def openFolder(folder, associated = False):
     # Hide attachment table
     ui.recordtableWidget.hide()
 
-    folder = item.data(0, Qt.UserRole).toPyObject()
+    folder = folder.data(0, Qt.UserRole).toPyObject()
     recordlist = ui.recordlistWidget
     recordlist.clear()
     ui.propertytableWidget.clear()
+
+    if associated:
+        folder = folder.associated
     for record in folder.items():
         listItem = QListWidgetItem()
         if record.subject is None:
@@ -96,6 +99,10 @@ def importEML():
             listItem.setText(item.subject)
         listItem.setData(Qt.UserRole, item)
         ui.recordlistWidget.addItem(listItem)
+
+def showHiddenItems():
+    current = ui.foldertreeWidget.currentItem()
+    openFolder(current, True)
 
 def deleteItem():
     # select current item
@@ -204,6 +211,7 @@ def onFolderContext(point):
     menu.addAction("Export as MBOX",saveMBOX)
     menu.addAction("Create new folder",createFolder)
     menu.addAction("Import EML",importEML)
+    menu.addAction("Hidden items",showHiddenItems)
     item = ui.foldertreeWidget.itemAt(point)
     record = item.data(0,Qt.UserRole).toPyObject()
 
@@ -215,7 +223,7 @@ def openUserStore(tablewidgetitem):
 
     foldertree = ui.foldertreeWidget
     foldertree.clear()
-    foldertree.itemClicked.connect(openTree)
+    foldertree.itemClicked.connect(openFolder)
     foldertree.parent = QTreeWidgetItem(foldertree, [user.name])
     foldertree.setItemExpanded(foldertree.parent, True)
 
