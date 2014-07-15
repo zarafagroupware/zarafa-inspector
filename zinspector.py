@@ -276,6 +276,7 @@ def drawTableWidget(table, header, data):
     for n, row in enumerate(data):
         for m, column in enumerate(row):
             newitem = QTableWidgetItem(str(column))
+            newitem.setFlags( QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled )
             table.setItem(n, m, newitem)
 
     table.setHorizontalHeaderLabels(header)
