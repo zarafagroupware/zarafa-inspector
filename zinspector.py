@@ -232,7 +232,7 @@ def openUserStore(tablewidgetitem):
         # If folder.depth is not null, we must find the parent
         parent = foldertree.parent
         if folder.depth != 0:
-            parentid = bin2hex(HrGetOneProp(folder.mapiobj, PR_PARENT_ENTRYID).Value)
+            parentid = bin2hex(folder.prop(PR_PARENT_ENTRYID).get_value())
             for treewidget in folders:
                 treewidgetfolder = treewidget.data(0, Qt.UserRole).toPyObject()
                 if treewidgetfolder.entryid == parentid:
