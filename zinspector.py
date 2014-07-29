@@ -224,7 +224,11 @@ def openUserStore(tablewidgetitem):
     foldertree = ui.foldertreeWidget
     foldertree.clear()
     foldertree.itemClicked.connect(openFolder)
-    foldertree.parent = QTreeWidgetItem(foldertree, [user.name])
+
+    # Root of the tree TODO: add this to python-zarafa as in user.store.root
+    rootnode = QTreeWidgetItem(foldertree, [user.name])
+    rootnode.setData(0, Qt.UserRole, Folder(user.store, None))
+    foldertree.parent = rootnode
     foldertree.setItemExpanded(foldertree.parent, True)
 
     folders = []
