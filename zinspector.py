@@ -59,7 +59,7 @@ def drawTable(properties):
     # Convert list of properties to [[prop, type, value]]
     data = []
     for prop in properties:
-        data.append([prop.idname,prop.typename,prop.value])
+        data.append([prop.idname,prop.typename,prop.strval()])
 
     drawTableWidget(propertytable, headers, data)
 
@@ -160,10 +160,7 @@ def showAttachments():
     horHeaders = []
     for n, attachment in enumerate(record.attachments()):
         for m, prop in enumerate(attachment.props()):
-            if PROP_TYPE(prop.proptag) == PT_BINARY:
-                newitem = QTableWidgetItem(bin2hex(prop.value))
-            else:
-                newitem = QTableWidgetItem(str(prop.value))
+            newitem = QTableWidgetItem(prop.strval())
             newitem.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
             newitem.setData(Qt.UserRole, attachment)
             attTable.setItem(n, m, newitem)
