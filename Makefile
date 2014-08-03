@@ -1,7 +1,7 @@
-PYQUI := pyuic4
+PYQUI := pyuic5
 # Support Arch Linux
 ifneq (,$(wildcard /etc/arch-release))
-	PYQUI := python2-pyuic4
+	PYQUI := python2-pyuic5
 endif
 
 zinspectorlib.py: zarafa-inspector.ui

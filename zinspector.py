@@ -6,9 +6,12 @@
 #!/usr/bin/env python
 from zinspectorlib import *
 
-# PyQt4
-from PyQt4.QtGui import *
-from PyQt4.QtCore import *
+# PyQt5
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
+from PyQt5.QtWebKit import *
+from PyQt5.QtNetwork import * 
+from PyQt5.QtWidgets import *
 
 import sys
 
