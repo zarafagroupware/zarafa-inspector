@@ -82,7 +82,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QListWidget" name="recordlistWidget">
+           <widget class="QListView" name="recordlistView">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
               <horstretch>0</horstretch>
