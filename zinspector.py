@@ -21,37 +21,86 @@ app = QApplication(sys.argv)
 MainWindow = QMainWindow()
 ui = Ui_MainWindow()
 
+class ItemListModel(QtCore.QAbstractListModel):
+    # TODO: make the class more intelligent and use a generator
+    numberPopulated = pyqtSignal(int)
+
+    def __init__(self, parent=None):
+        super(ItemListModel, self).__init__(parent)
+
+        self.itemCount = 0
+        self.itemList = []
+
+    def rowCount(self, parent=QtCore.QModelIndex()):
+        return self.itemCount
+
+    def data(self, index, role=Qt.DisplayRole):
+        if not index.isValid():
+            return None
+
+        if index.row() >= len(self.itemList) or index.row() < 0:
+            return None
+
+        if role == Qt.DisplayRole:
+            item = self.itemList[index.row()]
+            return item.subject
+
+        if role == Qt.BackgroundRole:
+            batch = (index.row() // 20) % 2
+            if batch == 0:
+                return qApp.palette().base()
+
+            return qApp.palette().alternateBase()
+
+        if role == Qt.ItemDataRole:
+            return self.itemList[index.row()]
+
+        return None
+
+    def canFetchMore(self, index):
+        return self.itemCount < len(self.itemList)
+
+    def fetchMore(self, index):
+        remainder = len(self.itemList) - self.itemCount
+        itemsToFetch = min(20, remainder)
+
+        self.beginInsertRows(QtCore.QModelIndex(), self.itemCount,
+                self.itemCount + itemsToFetch)
+
+        self.itemCount += itemsToFetch
+
+        self.endInsertRows()
+
+        self.numberPopulated.emit(itemsToFetch)
+
+    def addData(self, items):
+        self.itemList = list(items)
+        self.itemCount = 0
+        self.reset()
+
 def openFolder(folder, associated = False):
-    # Hide attachment table
-    ui.recordtableWidget.hide()
-
-    folder = folder.data(0, Qt.UserRole).toPyObject()
-    recordlist = ui.recordlistWidget
-    recordlist.clear()
-    ui.propertytableWidget.clear()
-
     if associated:
         folder = folder.associated
-    for record in folder.items():
-        listItem = QListWidgetItem()
-        if record.subject is None:
-            listItem.setText("<empty subject>")
-        else:
-            listItem.setText(record.subject)
-        listItem.setData(Qt.UserRole, record)
-        recordlist.addItem(listItem)
 
-    # Add click event for opening records
-    recordlist.itemClicked.connect(openRecord)
+    ui.recordtableWidget.hide()
+    ui.propertytableWidget.clear()
+    folder = folder.data(0, Qt.UserRole).toPyObject()
+    recordlist = ui.recordlistView
+
+    model = ItemListModel(MainWindow)
+    model.addData(folder.items())
+    recordlist.setModel(model)
+
+    QObject.connect(recordlist,SIGNAL("clicked(QModelIndex)"), openRecord)    
 
     # Show MAPI properties of folder
     drawTable(folder.props())
 
-def openRecord(item):
-    # Hide attachment table
+def openRecord(index):
+    item = index.model().data(index, role=Qt.ItemDataRole)
     ui.recordtableWidget.hide()
-    record = item.data(Qt.UserRole).toPyObject()
-    drawTable(record.props())
+
+    drawTable(item.props())
 
 def drawTable(properties):
     headers = ["Property", "Type", "Value"]
@@ -98,7 +147,7 @@ def importEML():
         else:
             listItem.setText(item.subject)
         listItem.setData(Qt.UserRole, item)
-        ui.recordlistWidget.addItem(listItem)
+        # ui.recordlistView.addItem(listItem)
 
 def showHiddenItems():
     current = ui.foldertreeWidget.currentItem()
@@ -106,7 +155,8 @@ def showHiddenItems():
 
 def deleteItem():
     # select current item
-    recordlist = ui.recordlistWidget
+    # TODO: update to new functionality
+    recordlist = ui.recordlistView
     current = recordlist.currentItem()
     record = current.data(Qt.UserRole).toPyObject()
 
@@ -119,7 +169,8 @@ def deleteItem():
     item = None
 
 def saveEML():
-    current = ui.recordlistWidget.currentItem()
+    # TODO: update to new functionality
+    current = ui.recordlistView.currentItem()
     record = current.data(Qt.UserRole).toPyObject()
     filename = QFileDialog.getSaveFileName(MainWindow, 'Save EML', '.', "Emails (*.eml)")
 
@@ -145,7 +196,8 @@ def onAttTableRow(point):
     menu.exec_(ui.recordtableWidget.mapToGlobal(point))
 
 def showAttachments():
-    current = ui.recordlistWidget.currentItem()
+    # TODO: update to new functionality
+    current = ui.recordlistView.currentItem()
     record = current.data(Qt.UserRole).toPyObject()
     attTable = ui.recordtableWidget
     attTable.clear()
@@ -176,7 +228,8 @@ def showAttachments():
     attTable.show()
 
 def showRecipients():
-    current = ui.recordlistWidget.currentItem()
+    # TODO: update to new functionality
+    current = ui.recordlistView.currentItem()
     record = current.data(Qt.UserRole).toPyObject()
 
     props = ['email','addrtype','name','entryid']
@@ -186,8 +239,9 @@ def showRecipients():
     drawTableWidget(ui.recordtableWidget, props, data)
 
 def onRecordContext(point):
-    menu = QMenu("Menu",ui.recordlistWidget)
-    item = ui.recordlistWidget.itemAt(point)
+    # TODO: update to new functionality
+    menu = QMenu("Menu",ui.recordlistView)
+    item = ui.recordlistView.itemAt(point)
     record = item.data(Qt.UserRole).toPyObject()
 
     if record.prop(PR_MESSAGE_CLASS).get_value().startswith('IPM.Note'):
@@ -201,7 +255,7 @@ def onRecordContext(point):
     menu.addAction("View recipients",showRecipients)
 
     # Show the context menu.
-    menu.exec_(ui.recordlistWidget.mapToGlobal(point))
+    menu.exec_(ui.recordlistView.mapToGlobal(point))
 
 def onFolderContext(point):
     menu = QMenu("Menu",ui.foldertreeWidget)
@@ -248,16 +302,18 @@ def openUserStore(tablewidgetitem):
         folders.append(item)
 
     # Setup contextmenu's
-    recordlist = ui.recordlistWidget
+    """
+    recordlist = ui.recordlistView
     recordlist.setContextMenuPolicy(Qt.CustomContextMenu)
     foldertree.setContextMenuPolicy(Qt.CustomContextMenu)
-    recordlist.connect(ui.recordlistWidget, SIGNAL("customContextMenuRequested(QPoint)"),onRecordContext)
+    recordlist.connect(ui.recordlistView, SIGNAL("customContextMenuRequested(QPoint)"),onRecordContext)
     foldertree.connect(foldertree, SIGNAL("customContextMenuRequested(QPoint)"),onFolderContext)
+    """
 
     # Speed up recordlistwidget 
-    recordlist.setLayoutMode(QListWidget.Batched)
-    recordlist.updatesEnabled = False
-    recordlist.setUniformItemSizes(True)
+    #recordlist.setLayoutMode(QListWidget.Batched)
+    #recordlist.updatesEnabled = False
+    #recordlist.setUniformItemSizes(True)
 
 def drawGAB(server, remoteusers=False):
     headers = ["name","fullname","email"]
