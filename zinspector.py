@@ -43,7 +43,10 @@ class ItemListModel(QtCore.QAbstractListModel):
 
         if role == Qt.DisplayRole:
             item = self.itemList[index.row()]
-            return item.subject
+            if not item.subject: 
+                return 'Empty Subject'
+            else:
+                return item.subject
 
         if role == Qt.BackgroundRole:
             batch = (index.row() // 20) % 2
