@@ -84,39 +84,8 @@ class ItemListModel(QtCore.QAbstractListModel):
         self.reset()
 
 """
-def openFolder(folder, associated = False):
-    if associated:
-        folder = folder.associated
 
-    ui.recordtableWidget.hide()
-    ui.propertytableWidget.clear()
-    folder = folder.data(0, Qt.UserRole).toPyObject()
-    recordlist = ui.recordlistView
 
-    model = ItemListModel(MainWindow)
-    model.addData(folder.items())
-    recordlist.setModel(model)
-
-    QObject.connect(recordlist,SIGNAL("clicked(QModelIndex)"), openRecord)    
-
-    # Show MAPI properties of folder
-    drawTable(folder.props())
-
-def openRecord(index):
-    item = index.model().data(index, role=Qt.ItemDataRole)
-    ui.recordtableWidget.hide()
-
-    drawTable(item.props())
-
-def drawTable(properties):
-    headers = ["Property", "Type", "Value"]
-    propertytable = ui.propertytableWidget
-    # Convert list of properties to [[prop, type, value]]
-    data = []
-    for prop in properties:
-        data.append([prop.idname,prop.typename,prop.strval()])
-
-    drawTableWidget(propertytable, headers, data)
 
 def saveMBOX():
     current = ui.foldertreeWidget.currentItem()
@@ -273,64 +242,6 @@ def onFolderContext(point):
     record = item.data(0,Qt.UserRole).toPyObject()
 
     menu.exec_(ui.foldertreeWidget.mapToGlobal(point))
-
-def openUserStore(tablewidgetitem):
-    userEntry = ui.gabwidget.item(tablewidgetitem.row(), 0)
-    user = server.user(userEntry.text())
-
-    foldertree = ui.foldertreeWidget
-    foldertree.clear()
-    foldertree.itemClicked.connect(openFolder)
-
-    # Root of the tree TODO: add this to python-zarafa as in user.store.root
-    rootnode = QTreeWidgetItem(foldertree, [user.name])
-    rootnode.setData(0, Qt.UserRole, Folder(user.store, None))
-    foldertree.parent = rootnode
-    foldertree.setItemExpanded(foldertree.parent, True)
-
-    folders = []
-    for depth, folder in enumerate(user.store.folders(system=True,recurse=True)):
-        # If folder.depth is not null, we must find the parent
-        parent = foldertree.parent
-        if folder.depth != 0:
-            parentid = bin2hex(folder.prop(PR_PARENT_ENTRYID).get_value())
-            for treewidget in folders:
-                treewidgetfolder = treewidget.data(0, Qt.UserRole).toPyObject()
-                if treewidgetfolder.entryid == parentid:
-                    parent = treewidget
-                    break
-
-        item = QTreeWidgetItem(parent, [folder.name])
-        item.setData(0, Qt.UserRole, folder)
-        if folder.name == "IPM_SUBTREE":
-            foldertree.setItemExpanded(item, True)
-
-        folders.append(item)
-
-    # Setup contextmenu's
-    #recordlist = ui.recordlistView
-    #recordlist.setContextMenuPolicy(Qt.CustomContextMenu)
-    #foldertree.setContextMenuPolicy(Qt.CustomContextMenu)
-    #recordlist.connect(ui.recordlistView, SIGNAL("customContextMenuRequested(QPoint)"),onRecordContext)
-    #foldertree.connect(foldertree, SIGNAL("customContextMenuRequested(QPoint)"),onFolderContext)
-
-    # Speed up recordlistwidget 
-    #recordlist.setLayoutMode(QListWidget.Batched)
-    #recordlist.updatesEnabled = False
-    #recordlist.setUniformItemSizes(True)
-
-def drawGAB(server, remoteusers=False):
-    headers = ["name","fullname","email"]
-    data = []
-    for user in server.users(remote=remoteusers):
-        data.append([getattr(user,prop) for prop in headers])
-    drawTableWidget(ui.gabwidget,headers,data)
-
-    ui.gabwidget.itemClicked.connect(openUserStore)
-    # hide recordtableWidget by default
-    ui.recordtableWidget.hide()
-
-
 """
 
 class MyMainWindow(QMainWindow, Ui_MainWindow):
@@ -350,7 +261,8 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         self.actionServers.triggered.connect(lambda: self.drawStatsTable(PR_EC_STATSTABLE_SERVERS))
         self.actionSessions.triggered.connect(lambda: self.drawStatsTable(PR_EC_STATSTABLE_SESSIONS))
         self.actionCompany.triggered.connect(lambda: self.drawStatsTable(PR_EC_STATSTABLE_COMPANY))
-        #drawGAB(server)
+
+        self.drawGAB()
 
     def drawStatsTable(self, statsTable):
         self.tabWidget.setCurrentIndex(2)
@@ -370,6 +282,82 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         table.setHorizontalHeaderLabels(header)
         table.resizeColumnsToContents()
         table.show()
+
+    def drawGAB(self):
+        headers = ["name","fullname","email"]
+        data = []
+        for user in self.server.users():
+            data.append([getattr(user,prop) for prop in headers])
+        self.drawTableWidget(self.gabwidget,headers,data)
+
+        self.gabwidget.itemClicked.connect(self.openUserStore)
+        # hide recordtableWidget by default
+        self.recordtableWidget.hide()
+
+    def openUserStore(self, tablewidgetitem):
+        userEntry = self.gabwidget.item(tablewidgetitem.row(), 0)
+        user = self.server.user(userEntry.text())
+
+        foldertree = self.foldertreeWidget
+        foldertree.clear()
+        foldertree.itemClicked.connect(self.openFolder)
+
+        # Root of the tree TODO: add this to python-zarafa as in user.store.root
+        rootnode = QTreeWidgetItem(foldertree, [user.name])
+        rootnode.setData(0, Qt.UserRole, Folder(user.store, None))
+        foldertree.parent = rootnode
+        foldertree.setItemExpanded(foldertree.parent, True)
+
+        folders = []
+        for depth, folder in enumerate(user.store.folders(system=True,recurse=True)):
+            # If folder.depth is not null, we must find the parent
+            parent = foldertree.parent
+            if folder.depth != 0:
+                parentid = bin2hex(folder.prop(PR_PARENT_ENTRYID).get_value())
+                for treewidget in folders:
+                    treewidgetfolder = treewidget.data(0, Qt.UserRole).toPyObject()
+                    if treewidgetfolder.entryid == parentid:
+                        parent = treewidget
+                        break
+
+            item = QTreeWidgetItem(parent, [folder.name])
+            item.setData(0, Qt.UserRole, folder)
+            if folder.name == "IPM_SUBTREE":
+                foldertree.setItemExpanded(item, True)
+
+            folders.append(item)
+
+    def openFolder(self, folder, associated = False):
+        if associated:
+            folder = folder.associated
+
+        self.recordtableWidget.hide()
+        self.propertytableWidget.clear()
+        folder = folder.data(0, Qt.UserRole).toPyObject()
+
+        model = ItemListModel(self)
+        model.addData(folder.items())
+        self.recordlistView.setModel(model)
+
+        QObject.connect(self.recordlistView, SIGNAL("clicked(QModelIndex)"), self.openRecord)    
+
+        # Show MAPI properties of folder
+        #drawTable(folder.props())
+
+    def openRecord(self, index):
+        item = index.model().data(index, role=Qt.ItemDataRole)
+        self.recordtableWidget.hide()
+        self.drawTable(item.props())
+
+    def drawTable(self, properties):
+        headers = ["Property", "Type", "Value"]
+        propertytable = self.propertytableWidget
+        # Convert list of properties to [[prop, type, value]]
+        data = []
+        for prop in properties:
+            data.append([prop.idname,prop.typename,prop.strval()])
+
+        self.drawTableWidget(propertytable, headers, data)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
