@@ -17,9 +17,14 @@ from zarafa import Folder
 from MAPI.Util import *
 from MAPI.Tags import *
 
-app = QApplication(sys.argv)
-MainWindow = QMainWindow()
-ui = Ui_MainWindow()
+#MainWindow = QMainWindow()
+#ui = Ui_MainWindow()
+#ui.setupUi(MainWindow)
+
+class ItemListView(QListView):
+    def __init__(self, parent, *args):
+        super(ItemListView, self).__init__(parent, args)
+
 
 class ItemListModel(QtCore.QAbstractListModel):
     # TODO: make the class more intelligent and use a generator
@@ -78,6 +83,7 @@ class ItemListModel(QtCore.QAbstractListModel):
         self.itemCount = 0
         self.reset()
 
+"""
 def openFolder(folder, associated = False):
     if associated:
         folder = folder.associated
@@ -302,13 +308,11 @@ def openUserStore(tablewidgetitem):
         folders.append(item)
 
     # Setup contextmenu's
-    """
-    recordlist = ui.recordlistView
-    recordlist.setContextMenuPolicy(Qt.CustomContextMenu)
-    foldertree.setContextMenuPolicy(Qt.CustomContextMenu)
-    recordlist.connect(ui.recordlistView, SIGNAL("customContextMenuRequested(QPoint)"),onRecordContext)
-    foldertree.connect(foldertree, SIGNAL("customContextMenuRequested(QPoint)"),onFolderContext)
-    """
+    #recordlist = ui.recordlistView
+    #recordlist.setContextMenuPolicy(Qt.CustomContextMenu)
+    #foldertree.setContextMenuPolicy(Qt.CustomContextMenu)
+    #recordlist.connect(ui.recordlistView, SIGNAL("customContextMenuRequested(QPoint)"),onRecordContext)
+    #foldertree.connect(foldertree, SIGNAL("customContextMenuRequested(QPoint)"),onFolderContext)
 
     # Speed up recordlistwidget 
     #recordlist.setLayoutMode(QListWidget.Batched)
@@ -326,36 +330,47 @@ def drawGAB(server, remoteusers=False):
     # hide recordtableWidget by default
     ui.recordtableWidget.hide()
 
-def drawTableWidget(table, header, data):
-    table.setRowCount(len(data))
-    table.setColumnCount(len(header))
 
-    for n, row in enumerate(data):
-        for m, column in enumerate(row):
-            newitem = QTableWidgetItem(str(column))
-            newitem.setFlags( QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled )
-            table.setItem(n, m, newitem)
+"""
 
-    table.setHorizontalHeaderLabels(header)
-    table.resizeColumnsToContents()
-    table.show()
+class MyMainWindow(QMainWindow, Ui_MainWindow):
+    def __init__(self):
+        QMainWindow.__init__(self)
 
-def drawStatsTable(statsTable):
-    ui.tabWidget.setCurrentIndex(2)
-    table = server.table(statsTable)
-    drawTableWidget(ui.statstableWidget, table.header, table.data())
+        # set up User Interface (widgets, layout...)
+        self.setupUi(self)
+
+        # connect to server
+        self.server = zarafa.Server()
+        # Stats tab
+        self.actionUsers.triggered.connect(lambda: self.drawStatsTable(PR_EC_STATSTABLE_USERS))
+        self.actionSystem.triggered.connect(lambda: self.drawStatsTable(PR_EC_STATSTABLE_SYSTEM))
+        self.actionServers.triggered.connect(lambda: self.drawStatsTable(PR_EC_STATSTABLE_SERVERS))
+        self.actionSessions.triggered.connect(lambda: self.drawStatsTable(PR_EC_STATSTABLE_SESSIONS))
+        self.actionCompany.triggered.connect(lambda: self.drawStatsTable(PR_EC_STATSTABLE_COMPANY))
+        #drawGAB(server)
+
+    def drawStatsTable(self, statsTable):
+        self.tabWidget.setCurrentIndex(2)
+        table = self.server.table(statsTable)
+        self.drawTableWidget(self.statstableWidget, table.header, table.data())
+
+    def drawTableWidget(self, table, header, data):
+        table.setRowCount(len(data))
+        table.setColumnCount(len(header))
+
+        for n, row in enumerate(data):
+            for m, column in enumerate(row):
+                newitem = QTableWidgetItem(str(column))
+                newitem.setFlags( QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled )
+                table.setItem(n, m, newitem)
+
+        table.setHorizontalHeaderLabels(header)
+        table.resizeColumnsToContents()
+        table.show()
 
 if __name__ == "__main__":
-    ui.setupUi(MainWindow)
-
-    # connect to server
-    server = zarafa.Server()
-    # Stats tab
-    ui.actionUsers.triggered.connect(lambda: drawStatsTable(PR_EC_STATSTABLE_USERS))
-    ui.actionSystem.triggered.connect(lambda: drawStatsTable(PR_EC_STATSTABLE_SYSTEM))
-    ui.actionServers.triggered.connect(lambda: drawStatsTable(PR_EC_STATSTABLE_SERVERS))
-    ui.actionSessions.triggered.connect(lambda: drawStatsTable(PR_EC_STATSTABLE_SESSIONS))
-    ui.actionCompany.triggered.connect(lambda: drawStatsTable(PR_EC_STATSTABLE_COMPANY))
-    drawGAB(server)
-    MainWindow.show()
+    app = QApplication(sys.argv)
+    window = MyMainWindow()
+    window.show()
     sys.exit(app.exec_())
