@@ -340,8 +340,10 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         # set up User Interface (widgets, layout...)
         self.setupUi(self)
 
-        # connect to server
+        # TODO: add option to select server
+        # TODO: what if connection fails?
         self.server = zarafa.Server()
+
         # Stats tab
         self.actionUsers.triggered.connect(lambda: self.drawStatsTable(PR_EC_STATSTABLE_USERS))
         self.actionSystem.triggered.connect(lambda: self.drawStatsTable(PR_EC_STATSTABLE_SYSTEM))
