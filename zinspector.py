@@ -18,9 +18,119 @@ from MAPI.Util import *
 from MAPI.Tags import *
 
 class ItemListView(QListView):
-    def __init__(self, parent, *args):
-        super(ItemListView, self).__init__(parent, args)
+    def __init__(self):
+        QListView.__init__(self)
+        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.connect(self, SIGNAL("customContextMenuRequested(QPoint)"), self.onRecordContext)
 
+    def onRecordContext(self, point):
+        index = self.indexAt(point)
+        record = self.model().data(index, Qt.ItemDataRole)
+
+        # TODO: update to new functionality
+        menu = QMenu("Menu",self)
+
+        if record.prop(PR_MESSAGE_CLASS).get_value().startswith('IPM.Note'):
+            menu.addAction("Save as EML", self.saveEML)
+
+        menu.addAction("Delete Item", self.deleteItem)
+
+        if record.attachments():
+            menu.addAction("View attachments", self.showAttachments)
+
+        menu.addAction("View recipients", self.showRecipients)
+
+        # Show the context menu.
+        menu.exec_(self.mapToGlobal(point))
+
+    def showAttachments(self):
+        current = self.currentIndex()
+        record = self.model().data(current, Qt.ItemDataRole)
+
+        # TODO: hrrm how to sole this puzzle
+        """
+        attTable = ui.recordtableWidget
+        attTable.clear()
+
+        attTable.setContextMenuPolicy(Qt.CustomContextMenu)
+        attTable.connect(attTable, SIGNAL("customContextMenuRequested(QPoint)"),onAttTableRow)
+
+        # Draw table
+        attTable.setColumnCount(20)
+        attTable.setRowCount(len(record.attachments()))
+        attTable.setSizePolicy(QSizePolicy(QSizePolicy.Preferred,QSizePolicy.Preferred))
+        horHeaders = []
+        for n, attachment in enumerate(record.attachments()):
+            for m, prop in enumerate(attachment.props()):
+                newitem = QTableWidgetItem(prop.strval())
+                newitem.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
+                newitem.setData(Qt.UserRole, attachment)
+                attTable.setItem(n, m, newitem)
+                if n == 0:
+                    # setHorizontalHeaderLabels doesn't handle python None, so append 'None'
+                    if prop.idname is None:
+                        horHeaders.append('None')
+                    else:
+                        horHeaders.append(prop.idname)
+
+        attTable.setHorizontalHeaderLabels(horHeaders)
+        attTable.resizeColumnsToContents()
+        attTable.show()
+        """
+
+    def showRecipients(self):
+        current = self.currentIndex()
+        record = self.model().data(current, Qt.ItemDataRole)
+
+        # TODO: how to solve this puzzle again :)
+        """
+        props = ['email','addrtype','name','entryid']
+        data = []
+        for recipient in record.recipients():
+            data.append([getattr(recipient,prop) for prop in props])
+        drawTableWidget(ui.recordtableWidget, props, data)
+        """
+
+    def deleteItem(self):
+        current = self.currentIndex()
+        record = self.model().data(current, Qt.ItemDataRole)
+
+        # Fetch selected folder, since I folder can delete an Item and the Item doesn't need to have Item.folder or Item.store
+        # Blah, record.folder?
+        """"
+        currentfolder = ui.foldertreeWidget.currentItem()
+        folder = currentfolder.data(0,Qt.UserRole).toPyObject()
+        folder.delete([record])
+
+        item = recordlist.takeItem(recordlist.row(current))
+        item = None
+        """
+
+    def saveEML(self):
+        current = self.currentIndex()
+        record = self.model().data(current, Qt.ItemDataRole)
+        filename = QFileDialog.getSaveFileName(self.parent(), 'Save EML', '.', "Emails (*.eml)")
+
+        if filename != '':
+            rfc882 = record.eml()
+            fname = open(filename, 'w')
+            fname.write(rfc882)
+            fname.close()
+
+    def saveAttachment():
+        current = ui.recordtableWidget.currentItem()
+        record = current.data(Qt.UserRole).toPyObject()
+
+        filename = QFileDialog.getSaveFileName(MainWindow, 'Save Attachment', '.')
+        if filename != '':
+            fname = open(filename, 'w')
+            fname.write(record.data)
+            fname.close()
+
+    def onAttTableRow(point):
+        menu = QMenu("Menu", ui.recordtableWidget)
+        menu.addAction("Save attachment",saveAttachment)
+        menu.exec_(ui.recordtableWidget.mapToGlobal(point))
 
 class ItemListModel(QtCore.QAbstractListModel):
     # TODO: make the class more intelligent and use a generator
@@ -44,7 +154,7 @@ class ItemListModel(QtCore.QAbstractListModel):
 
         if role == Qt.DisplayRole:
             item = self.itemList[index.row()]
-            if not item.subject: 
+            if not item.subject:
                 return 'Empty Subject'
             else:
                 return item.subject
@@ -75,113 +185,6 @@ class ItemListModel(QtCore.QAbstractListModel):
         self.itemCount = 0
         self.reset()
 
-"""
-def deleteItem():
-    # select current item
-    # TODO: update to new functionality
-    recordlist = ui.recordlistView
-    current = recordlist.currentItem()
-    record = current.data(Qt.UserRole).toPyObject()
-
-    # Fetch selected folder, since I folder can delete an Item and the Item doesn't need to have Item.folder or Item.store
-    currentfolder = ui.foldertreeWidget.currentItem()
-    folder = currentfolder.data(0,Qt.UserRole).toPyObject()
-    folder.delete([record])
-
-    item = recordlist.takeItem(recordlist.row(current))
-    item = None
-
-def saveEML():
-    # TODO: update to new functionality
-    current = ui.recordlistView.currentItem()
-    record = current.data(Qt.UserRole).toPyObject()
-    filename = QFileDialog.getSaveFileName(MainWindow, 'Save EML', '.', "Emails (*.eml)")
-
-    if filename != '':
-        rfc882 = record.eml()
-        fname = open(filename, 'w')
-        fname.write(rfc882)
-        fname.close()
-
-def saveAttachment():
-    current = ui.recordtableWidget.currentItem()
-    record = current.data(Qt.UserRole).toPyObject()
-
-    filename = QFileDialog.getSaveFileName(MainWindow, 'Save Attachment', '.')
-    if filename != '':
-        fname = open(filename, 'w')
-        fname.write(record.data)
-        fname.close()
-
-def onAttTableRow(point):
-    menu = QMenu("Menu", ui.recordtableWidget)
-    menu.addAction("Save attachment",saveAttachment)
-    menu.exec_(ui.recordtableWidget.mapToGlobal(point))
-
-def showAttachments():
-    # TODO: update to new functionality
-    current = ui.recordlistView.currentItem()
-    record = current.data(Qt.UserRole).toPyObject()
-    attTable = ui.recordtableWidget
-    attTable.clear()
-
-    attTable.setContextMenuPolicy(Qt.CustomContextMenu)
-    attTable.connect(attTable, SIGNAL("customContextMenuRequested(QPoint)"),onAttTableRow)
-
-    # Draw table
-    attTable.setColumnCount(20)
-    attTable.setRowCount(len(record.attachments()))
-    attTable.setSizePolicy(QSizePolicy(QSizePolicy.Preferred,QSizePolicy.Preferred))
-    horHeaders = []
-    for n, attachment in enumerate(record.attachments()):
-        for m, prop in enumerate(attachment.props()):
-            newitem = QTableWidgetItem(prop.strval())
-            newitem.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
-            newitem.setData(Qt.UserRole, attachment)
-            attTable.setItem(n, m, newitem)
-            if n == 0:
-                # setHorizontalHeaderLabels doesn't handle python None, so append 'None'
-                if prop.idname is None:
-                    horHeaders.append('None')
-                else:
-                    horHeaders.append(prop.idname)
-
-    attTable.setHorizontalHeaderLabels(horHeaders)
-    attTable.resizeColumnsToContents()
-    attTable.show()
-
-def showRecipients():
-    # TODO: update to new functionality
-    current = ui.recordlistView.currentItem()
-    record = current.data(Qt.UserRole).toPyObject()
-
-    props = ['email','addrtype','name','entryid']
-    data = []
-    for recipient in record.recipients():
-        data.append([getattr(recipient,prop) for prop in props])
-    drawTableWidget(ui.recordtableWidget, props, data)
-
-def onRecordContext(point):
-    # TODO: update to new functionality
-    menu = QMenu("Menu",ui.recordlistView)
-    item = ui.recordlistView.itemAt(point)
-    record = item.data(Qt.UserRole).toPyObject()
-
-    if record.prop(PR_MESSAGE_CLASS).get_value().startswith('IPM.Note'):
-        menu.addAction("Save as EML",saveEML)
-
-    menu.addAction("Delete Item",deleteItem)
-
-    if record.attachments():
-        menu.addAction("View attachments",showAttachments)
-
-    menu.addAction("View recipients",showRecipients)
-
-    # Show the context menu.
-    menu.exec_(ui.recordlistView.mapToGlobal(point))
-
-"""
-
 class MyMainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self):
         QMainWindow.__init__(self)
@@ -199,6 +202,17 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         self.actionServers.triggered.connect(lambda: self.drawStatsTable(PR_EC_STATSTABLE_SERVERS))
         self.actionSessions.triggered.connect(lambda: self.drawStatsTable(PR_EC_STATSTABLE_SESSIONS))
         self.actionCompany.triggered.connect(lambda: self.drawStatsTable(PR_EC_STATSTABLE_COMPANY))
+
+        # Recordlist
+        self.recordlist = ItemListView()
+        # TODO: check if sizePolicy can be cleaner
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.recordlist.sizePolicy().hasHeightForWidth())
+        self.recordlist.setSizePolicy(sizePolicy)
+        self.horizontalLayout.insertWidget(1, self.recordlist)
+        QObject.connect(self.recordlist, SIGNAL("clicked(QModelIndex)"), self.openRecord)
 
         self.drawGAB()
 
@@ -278,9 +292,15 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
 
         model = ItemListModel(self)
         model.addData(folder.items())
-        self.recordlistView.setModel(model)
 
-        QObject.connect(self.recordlistView, SIGNAL("clicked(QModelIndex)"), self.openRecord)    
+        self.recordlist.setModel(model)
+        #self.recordlistView.setModel(model)
+         
+        #sizePolicy.setHeightForWidth(self.recordlistView.sizePolicy().hasHeightForWidth())
+        #self.recordlist.setSizePolicy(sizePolicy)
+        #self.recordlistView.setObjectName(_fromUtf8("recordlistView"))
+        #self.horizontalLayout.addWidget(self.recordlistView)
+
 
         # Show MAPI properties of folder
         self.drawTable(folder.props())
