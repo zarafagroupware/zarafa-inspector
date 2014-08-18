@@ -49,13 +49,6 @@ class ItemListModel(QtCore.QAbstractListModel):
             else:
                 return item.subject
 
-        if role == Qt.BackgroundRole:
-            batch = (index.row() // 20) % 2
-            if batch == 0:
-                return qApp.palette().base()
-
-            return qApp.palette().alternateBase()
-
         if role == Qt.ItemDataRole:
             return self.itemList[index.row()]
 
@@ -83,10 +76,6 @@ class ItemListModel(QtCore.QAbstractListModel):
         self.reset()
 
 """
-
-
-
-
 def deleteItem():
     # select current item
     # TODO: update to new functionality
