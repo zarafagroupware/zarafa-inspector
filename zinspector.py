@@ -18,8 +18,9 @@ from MAPI.Util import *
 from MAPI.Tags import *
 
 class ItemListView(QListView):
-    def __init__(self):
-        QListView.__init__(self)
+    def __init__(self, parent=None):
+        super(ItemListView, self).__init__(parent)
+        self.parent = self.parent()
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.connect(self, SIGNAL("customContextMenuRequested(QPoint)"), self.onRecordContext)
 
@@ -27,7 +28,6 @@ class ItemListView(QListView):
         index = self.indexAt(point)
         record = self.model().data(index, Qt.ItemDataRole)
 
-        # TODO: update to new functionality
         menu = QMenu("Menu",self)
 
         if record.prop(PR_MESSAGE_CLASS).get_value().startswith('IPM.Note'):
@@ -47,13 +47,11 @@ class ItemListView(QListView):
         current = self.currentIndex()
         record = self.model().data(current, Qt.ItemDataRole)
 
-        # TODO: hrrm how to sole this puzzle
-        """
-        attTable = ui.recordtableWidget
+        attTable = self.parent.recordtableWidget
         attTable.clear()
 
         attTable.setContextMenuPolicy(Qt.CustomContextMenu)
-        attTable.connect(attTable, SIGNAL("customContextMenuRequested(QPoint)"),onAttTableRow)
+        attTable.connect(attTable, SIGNAL("customContextMenuRequested(QPoint)"), self.onAttTableRow)
 
         # Draw table
         attTable.setColumnCount(20)
@@ -76,20 +74,16 @@ class ItemListView(QListView):
         attTable.setHorizontalHeaderLabels(horHeaders)
         attTable.resizeColumnsToContents()
         attTable.show()
-        """
 
     def showRecipients(self):
         current = self.currentIndex()
         record = self.model().data(current, Qt.ItemDataRole)
 
-        # TODO: how to solve this puzzle again :)
-        """
         props = ['email','addrtype','name','entryid']
         data = []
         for recipient in record.recipients():
             data.append([getattr(recipient,prop) for prop in props])
-        drawTableWidget(ui.recordtableWidget, props, data)
-        """
+        self.parent.drawTableWidget(self.parent.recordtableWidget, props, data)
 
     def deleteItem(self):
         current = self.currentIndex()
@@ -97,19 +91,18 @@ class ItemListView(QListView):
 
         # Fetch selected folder, since I folder can delete an Item and the Item doesn't need to have Item.folder or Item.store
         # Blah, record.folder?
-        """"
-        currentfolder = ui.foldertreeWidget.currentItem()
+        currentfolder = self.parent.foldertreeWidget.currentItem()
         folder = currentfolder.data(0,Qt.UserRole).toPyObject()
         folder.delete([record])
 
-        item = recordlist.takeItem(recordlist.row(current))
+        # TOOD: make this class notice an item has been removed
+        item = self.model().removeRow(current.row(), current)
         item = None
-        """
 
     def saveEML(self):
         current = self.currentIndex()
         record = self.model().data(current, Qt.ItemDataRole)
-        filename = QFileDialog.getSaveFileName(self.parent(), 'Save EML', '.', "Emails (*.eml)")
+        filename = QFileDialog.getSaveFileName(self.parent, 'Save EML', '.', "Emails (*.eml)")
 
         if filename != '':
             rfc882 = record.eml()
@@ -117,20 +110,20 @@ class ItemListView(QListView):
             fname.write(rfc882)
             fname.close()
 
-    def saveAttachment():
-        current = ui.recordtableWidget.currentItem()
+    def saveAttachment(self):
+        current = self.parent.recordtableWidget.currentItem()
         record = current.data(Qt.UserRole).toPyObject()
 
-        filename = QFileDialog.getSaveFileName(MainWindow, 'Save Attachment', '.')
+        filename = QFileDialog.getSaveFileName(self.parent, 'Save Attachment', '.')
         if filename != '':
             fname = open(filename, 'w')
             fname.write(record.data)
             fname.close()
 
-    def onAttTableRow(point):
-        menu = QMenu("Menu", ui.recordtableWidget)
-        menu.addAction("Save attachment",saveAttachment)
-        menu.exec_(ui.recordtableWidget.mapToGlobal(point))
+    def onAttTableRow(self, point):
+        menu = QMenu("Menu", self.parent.recordtableWidget)
+        menu.addAction("Save attachment", self.saveAttachment)
+        menu.exec_(self.parent.recordtableWidget.mapToGlobal(point))
 
 class ItemListModel(QtCore.QAbstractListModel):
     # TODO: make the class more intelligent and use a generator
@@ -204,7 +197,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         self.actionCompany.triggered.connect(lambda: self.drawStatsTable(PR_EC_STATSTABLE_COMPANY))
 
         # Recordlist
-        self.recordlist = ItemListView()
+        self.recordlist = ItemListView(self)
         # TODO: check if sizePolicy can be cleaner
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
