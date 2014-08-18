@@ -1,9 +1,9 @@
+#!/usr/bin/env python
 # zarafa-inspector: A GUI program which allows a user to examine MAPI properties in Zarafa and import and export data.
 #
 # Copyright 2014 Zarafa and contributors, license AGPLv3 (see LICENSE file for details)
 #
 
-#!/usr/bin/env python
 from zinspectorlib import *
 
 # PyQt4
@@ -16,10 +16,6 @@ import zarafa
 from zarafa import Folder
 from MAPI.Util import *
 from MAPI.Tags import *
-
-#MainWindow = QMainWindow()
-#ui = Ui_MainWindow()
-#ui.setupUi(MainWindow)
 
 class ItemListView(QListView):
     def __init__(self, parent, *args):
@@ -90,46 +86,6 @@ class ItemListModel(QtCore.QAbstractListModel):
 
 
 
-def saveMBOX():
-    current = ui.foldertreeWidget.currentItem()
-    folder = current.data(0,Qt.UserRole).toPyObject()
-    filename = QFileDialog.getSaveFileName(MainWindow, 'Save to MBOX', '.')
-
-    if filename != '':
-        # cast to string else mbox module breaks, since QString doesn't have endswith
-        folder.mbox(str(filename))
-
-def createFolder():
-    current = ui.foldertreeWidget.currentItem()
-    folder = current.data(0,Qt.UserRole).toPyObject()
-    foldername, ok = QtGui.QInputDialog.getText(MainWindow, 'Create folder Dialog', 'New folder name:')
-    if ok and foldername != '':
-        mapifolder = folder.create_folder(str(foldername))
-        newfolder = Folder(folder.store, mapifolder.GetProps([PR_ENTRYID], MAPI_UNICODE)[0].Value)
-        item = QTreeWidgetItem(current, [foldername])
-        item.setData(0, Qt.UserRole, newfolder)
-        ui.foldertreeWidget.insertTopLevelItem(item,0)
-
-def importEML():
-    current = ui.foldertreeWidget.currentItem()
-    folder = current.data(0,Qt.UserRole).toPyObject()
-    filename = QFileDialog.getOpenFileName(MainWindow, 'Open EML', '.', "Emails (*.eml)")
-    if filename != "":
-        fname = open(filename, 'r')
-        rfc822 = fname.read()
-        fname.close()
-        item = folder.create_item(eml=rfc822)
-        listItem = QListWidgetItem()
-        if item.subject is None:
-            listItem.setText("<empty subject>")
-        else:
-            listItem.setText(item.subject)
-        listItem.setData(Qt.UserRole, item)
-        # ui.recordlistView.addItem(listItem)
-
-def showHiddenItems():
-    current = ui.foldertreeWidget.currentItem()
-    openFolder(current, True)
 
 def deleteItem():
     # select current item
@@ -235,16 +191,6 @@ def onRecordContext(point):
     # Show the context menu.
     menu.exec_(ui.recordlistView.mapToGlobal(point))
 
-def onFolderContext(point):
-    menu = QMenu("Menu",ui.foldertreeWidget)
-    menu.addAction("Export as MBOX",saveMBOX)
-    menu.addAction("Create new folder",createFolder)
-    menu.addAction("Import EML",importEML)
-    menu.addAction("Hidden items",showHiddenItems)
-    item = ui.foldertreeWidget.itemAt(point)
-    record = item.data(0,Qt.UserRole).toPyObject()
-
-    menu.exec_(ui.foldertreeWidget.mapToGlobal(point))
 """
 
 class MyMainWindow(QMainWindow, Ui_MainWindow):
@@ -330,13 +276,16 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
 
             folders.append(item)
 
+        foldertree.setContextMenuPolicy(Qt.CustomContextMenu)
+        foldertree.connect(foldertree, SIGNAL("customContextMenuRequested(QPoint)"), self.onFolderContext)
+
     def openFolder(self, folder, associated = False):
-        if associated:
-            folder = folder.associated
 
         self.recordtableWidget.hide()
         self.propertytableWidget.clear()
         folder = folder.data(0, Qt.UserRole).toPyObject()
+        if associated:
+            folder = folder.associated
 
         model = ItemListModel(self)
         model.addData(folder.items())
@@ -345,7 +294,18 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         QObject.connect(self.recordlistView, SIGNAL("clicked(QModelIndex)"), self.openRecord)    
 
         # Show MAPI properties of folder
-        #drawTable(folder.props())
+        self.drawTable(folder.props())
+
+    def onFolderContext(self, point):
+        menu = QMenu("Menu", self.foldertreeWidget)
+        menu.addAction("Export as MBOX", self.saveMBOX)
+        menu.addAction("Create new folder", self.createFolder)
+        #menu.addAction("Import EML", self.importEML) # TODO: enable once fixed
+        menu.addAction("Hidden items", self.showHiddenItems)
+        item = self.foldertreeWidget.itemAt(point)
+        record = item.data(0,Qt.UserRole).toPyObject()
+
+        menu.exec_(self.foldertreeWidget.mapToGlobal(point))
 
     def openRecord(self, index):
         item = index.model().data(index, role=Qt.ItemDataRole)
@@ -361,6 +321,49 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
             data.append([prop.idname,prop.typename,prop.strval()])
 
         self.drawTableWidget(propertytable, headers, data)
+
+    def saveMBOX(self):
+        current = self.foldertreeWidget.currentItem()
+        folder = current.data(0,Qt.UserRole).toPyObject()
+        filename = QFileDialog.getSaveFileName(self, 'Save to MBOX', '.')
+
+        if filename != '':
+            # cast to string else mbox module breaks, since QString doesn't have endswith
+            folder.mbox(str(filename))
+
+    def createFolder(self):
+        current = self.foldertreeWidget.currentItem()
+        folder = current.data(0, Qt.UserRole).toPyObject()
+        foldername, ok = QtGui.QInputDialog.getText(self, 'Create folder Dialog', 'New folder name:')
+        if ok and foldername != '':
+            newfolder = folder.create_folder(str(foldername)) # TODO: cast to str really needed?
+            item = QTreeWidgetItem(current, [foldername])
+            item.setData(0, Qt.UserRole, newfolder)
+            self.foldertreeWidget.insertTopLevelItem(0, item)
+
+    def importEML(self):
+        # TODO: update to new functionality
+        """"
+        current = self.foldertreeWidget.currentItem()
+        folder = current.data(0,Qt.UserRole).toPyObject()
+        filename = QFileDialog.getOpenFileName(self, 'Open EML', '.', "Emails (*.eml)")
+        if filename != "":
+            fname = open(filename, 'r')
+            rfc822 = fname.read()
+            fname.close()
+            item = folder.create_item(eml=rfc822)
+            listItem = QListWidgetItem()
+            if item.subject is None:
+                listItem.setText("<empty subject>")
+            else:
+                listItem.setText(item.subject)
+            listItem.setData(Qt.UserRole, item)
+            # ui.recordlistView.addItem(listItem)
+            """
+
+    def showHiddenItems(self):
+        current = self.foldertreeWidget.currentItem()
+        self.openFolder(current, True)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
