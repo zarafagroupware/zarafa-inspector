@@ -92,7 +92,7 @@ class ItemListView(QListView):
             data.append([getattr(recipient,prop) for prop in props])
         self.parent.drawTableWidget(self.parent.recordtableWidget, props, data)
 
-    def deleteItem(self):
+    def deleteItem(self): # TODO: provide multi-select and removal
         current = self.currentIndex()
         record = self.model().data(current, Qt.ItemDataRole)
 
@@ -102,9 +102,7 @@ class ItemListView(QListView):
         folder = currentfolder.data(0,Qt.UserRole).toPyObject()
         folder.delete([record])
 
-        # TODO: make this class notice an item has been removed
-        item = self.model().removeRow(current.row(), current)
-        item = None
+        self.model().removeItems([self.currentIndex().row()])
 
     def saveEML(self):
         current = self.currentIndex()
@@ -196,10 +194,11 @@ class ItemListModel(QtCore.QAbstractListModel):
         [self.itemList.insert(0, item) for item in items] # is this the right function?
         self.endInsertRows()
 
-    def itemsRemoved(self, items):
-
-        print "remove"
-
+    def removeItems(self, items):
+        for index in items:
+            self.beginRemoveRows(QtCore.QModelIndex(), index, index)
+            self.itemList.pop(index)
+            self.endRemoveRows()
 
 class MyMainWindow(QMainWindow, Ui_MainWindow):
     '''
