@@ -194,6 +194,7 @@ class ItemListModel(QtCore.QAbstractListModel):
         [self.itemList.insert(0, item) for item in items] # is this the right function?
         self.endInsertRows()
 
+    # TODO: also need to have an removeItems which accepts an [zarafa.Item()] for ICS
     def removeItems(self, items):
         for index in items:
             self.beginRemoveRows(QtCore.QModelIndex(), index, index)
