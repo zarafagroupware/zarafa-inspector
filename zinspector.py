@@ -14,7 +14,6 @@ import sys
 
 import zarafa
 from zarafa import Folder
-from MAPI.Util import *
 from MAPI.Tags import *
 
 class ItemListView(QListView):
@@ -44,6 +43,7 @@ class ItemListView(QListView):
         menu.exec_(self.mapToGlobal(point))
 
     def showAttachments(self):
+        # TODO: probably nicer to split this widget in a seperate class?
         current = self.currentIndex()
         record = self.model().data(current, Qt.ItemDataRole)
 
@@ -90,12 +90,12 @@ class ItemListView(QListView):
         record = self.model().data(current, Qt.ItemDataRole)
 
         # Fetch selected folder, since I folder can delete an Item and the Item doesn't need to have Item.folder or Item.store
-        # Blah, record.folder?
+        # TODO: record.folder?
         currentfolder = self.parent.foldertreeWidget.currentItem()
         folder = currentfolder.data(0,Qt.UserRole).toPyObject()
         folder.delete([record])
 
-        # TOOD: make this class notice an item has been removed
+        # TODO: make this class notice an item has been removed
         item = self.model().removeRow(current.row(), current)
         item = None
 
@@ -285,16 +285,8 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
 
         model = ItemListModel(self)
         model.addData(folder.items())
-
         self.recordlist.setModel(model)
-        #self.recordlistView.setModel(model)
          
-        #sizePolicy.setHeightForWidth(self.recordlistView.sizePolicy().hasHeightForWidth())
-        #self.recordlist.setSizePolicy(sizePolicy)
-        #self.recordlistView.setObjectName(_fromUtf8("recordlistView"))
-        #self.horizontalLayout.addWidget(self.recordlistView)
-
-
         # Show MAPI properties of folder
         self.drawTable(folder.props())
 
