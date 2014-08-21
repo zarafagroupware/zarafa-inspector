@@ -191,11 +191,22 @@ class ItemListModel(QtCore.QAbstractListModel):
         self.itemCount = 0
         self.reset()
 
+    def addItems(self, items):
+        self.beginInsertRows(QtCore.QModelIndex(), 0, len(items))
+        [self.itemList.insert(0, item) for item in items] # is this the right function?
+        self.endInsertRows()
+
+    def itemsRemoved(self, items):
+
+        print "remove"
+
+
 class MyMainWindow(QMainWindow, Ui_MainWindow):
     '''
     class MyMainWindow
 
     Main GUI component which renders the whole Zarafa-Inspector
+
     '''
 
     def __init__(self):
@@ -250,6 +261,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
     def drawGAB(self):
         headers = ["name","fullname","email"]
         data = []
+        # TODO: pythonize?
         for user in self.server.users():
             data.append([getattr(user,prop) for prop in headers])
         self.drawTableWidget(self.gabwidget,headers,data)
@@ -313,7 +325,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         menu = QMenu("Menu", self.foldertreeWidget)
         menu.addAction("Export as MBOX", self.saveMBOX)
         menu.addAction("Create new folder", self.createFolder)
-        #menu.addAction("Import EML", self.importEML) # TODO: enable once fixed
+        menu.addAction("Import EML", self.importEML) # TODO: enable once fixed
         menu.addAction("Hidden items", self.showHiddenItems)
         item = self.foldertreeWidget.itemAt(point)
         record = item.data(0,Qt.UserRole).toPyObject()
@@ -356,7 +368,6 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
 
     def importEML(self):
         # TODO: update to new functionality
-        """"
         current = self.foldertreeWidget.currentItem()
         folder = current.data(0,Qt.UserRole).toPyObject()
         filename = QFileDialog.getOpenFileName(self, 'Open EML', '.', "Emails (*.eml)")
@@ -365,14 +376,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
             rfc822 = fname.read()
             fname.close()
             item = folder.create_item(eml=rfc822)
-            listItem = QListWidgetItem()
-            if item.subject is None:
-                listItem.setText("<empty subject>")
-            else:
-                listItem.setText(item.subject)
-            listItem.setData(Qt.UserRole, item)
-            # ui.recordlistView.addItem(listItem)
-            """
+            self.recordlist.model().addItems([item])
 
     def showHiddenItems(self):
         current = self.foldertreeWidget.currentItem()
