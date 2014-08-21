@@ -17,6 +17,13 @@ from zarafa import Folder
 from MAPI.Tags import *
 
 class ItemListView(QListView):
+    '''
+    ItemListView class
+
+    Used to draw a QListView with MAPI objects and provides a number of operations
+    on a MAPI object.
+    '''
+
     def __init__(self, parent=None):
         super(ItemListView, self).__init__(parent)
         self.parent = self.parent()
@@ -126,6 +133,12 @@ class ItemListView(QListView):
         menu.exec_(self.parent.recordtableWidget.mapToGlobal(point))
 
 class ItemListModel(QtCore.QAbstractListModel):
+    '''
+    class ItemListModel
+
+    Model which contains MAPI Objects from a MAPI Folder used by the ItemListView
+    '''
+
     # TODO: make the class more intelligent and use a generator
     numberPopulated = pyqtSignal(int)
 
@@ -179,6 +192,12 @@ class ItemListModel(QtCore.QAbstractListModel):
         self.reset()
 
 class MyMainWindow(QMainWindow, Ui_MainWindow):
+    '''
+    class MyMainWindow
+
+    Main GUI component which renders the whole Zarafa-Inspector
+    '''
+
     def __init__(self):
         QMainWindow.__init__(self)
 
