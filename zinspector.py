@@ -259,7 +259,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         table.show()
 
     def drawGAB(self):
-        headers = ["name","fullname","email"]
+        headers = ["name","fullname","email","active","home_server"]
         data = []
         # TODO: pythonize?
         for user in self.server.users():
