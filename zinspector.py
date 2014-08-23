@@ -250,18 +250,21 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
 
         for n, row in enumerate(data):
             for m, column in enumerate(row):
-                newitem = QTableWidgetItem(str(column))
+                newitem = QTableWidgetItem()
+                if column is None: # FIXME: named properties should be shown
+                    column = str(column)
+                newitem.setData(Qt.EditRole, column)
                 newitem.setFlags( QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled )
                 table.setItem(n, m, newitem)
 
         table.setHorizontalHeaderLabels(header)
         table.resizeColumnsToContents()
+        table.setSortingEnabled(True)
         table.show()
 
     def drawGAB(self):
         headers = ["name","fullname","email","active","home_server"]
         data = []
-        # TODO: pythonize?
         for user in self.server.users():
             data.append([getattr(user,prop) for prop in headers])
         self.drawTableWidget(self.gabwidget,headers,data)
