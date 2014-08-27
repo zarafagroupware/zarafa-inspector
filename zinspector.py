@@ -309,6 +309,19 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         foldertree.setContextMenuPolicy(Qt.CustomContextMenu)
         foldertree.connect(foldertree, SIGNAL("customContextMenuRequested(QPoint)"), self.onFolderContext)
 
+    def update(self, item, flags):
+        print "update"
+        self.recordlist.model().addItems([item])
+
+    def updateFolder(self):
+        # updates folder
+        print "update folder"
+        folder_state = self.folder.state
+        new_state = self.folder.sync(self(), folder_state) # from last known state
+        if new_state != folder_state:
+            print "new state"
+            folder_state = new_state
+
     def openFolder(self, folder, associated = False):
 
         self.recordtableWidget.hide()
@@ -320,6 +333,12 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         model = ItemListModel(self)
         model.addData(folder.items())
         self.recordlist.setModel(model)
+
+        self.folder = folder
+
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.updateFolder)
+        self.timer.start(1000) # 5 seconds
          
         # Show MAPI properties of folder
         self.drawTable(folder.props())
@@ -346,7 +365,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         # Convert list of properties to [[prop, type, value]]
         data = []
         for prop in properties:
-            data.append([prop.idname,prop.typename,prop.strval()])
+            data.append([prop.idname or '',prop.typename,prop.strval()])
 
         self.drawTableWidget(propertytable, headers, data)
 
