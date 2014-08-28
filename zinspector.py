@@ -87,9 +87,7 @@ class ItemListView(QListView):
         record = self.model().data(current, Qt.ItemDataRole)
 
         props = ['email','addrtype','name','entryid']
-        data = []
-        for recipient in record.recipients():
-            data.append([getattr(recipient,prop) for prop in props])
+        data = [(getattr(recipient,prop) for prop in props) for recipient in record.recipients()]
         self.parent.drawTableWidget(self.parent.recordtableWidget, props, data)
 
     def deleteItem(self): # TODO: provide multi-select and removal
@@ -99,7 +97,7 @@ class ItemListView(QListView):
         # Fetch selected folder, since I folder can delete an Item and the Item doesn't need to have Item.folder or Item.store
         # TODO: record.folder?
         currentfolder = self.parent.foldertreeWidget.currentItem()
-        folder = currentfolder.data(0,Qt.UserRole).toPyObject()
+        folder = currentfolder.data(0, Qt.UserRole).toPyObject()
         folder.delete([record])
 
         self.model().removeItems([self.currentIndex().row()])
@@ -263,10 +261,8 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         table.show()
 
     def drawGAB(self):
-        headers = ["name","fullname","email","active","home_server"]
-        data = []
-        for user in self.server.users():
-            data.append([getattr(user,prop) for prop in headers])
+        headers = ["name", "fullname", "email", "active", "home_server"]
+        data = [([getattr(user,prop) for prop in headers]) for user in self.server.users()]
         self.drawTableWidget(self.gabwidget,headers,data)
 
         self.gabwidget.itemClicked.connect(self.openUserStore)
@@ -320,7 +316,6 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
             self.folder_state = new_state
 
     def openFolder(self, folder, associated = False):
-
         self.recordtableWidget.hide()
         self.propertytableWidget.clear()
         folder = folder.data(0, Qt.UserRole).toPyObject()
@@ -331,6 +326,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         model.addData(folder.items())
         self.recordlist.setModel(model)
 
+        # hooking ICS for new items
         self.folder = folder
         self.folder_state = folder.state
 
@@ -361,9 +357,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         headers = ["Property", "Type", "Value"]
         propertytable = self.propertytableWidget
         # Convert list of properties to [[prop, type, value]]
-        data = []
-        for prop in properties:
-            data.append([prop.idname or '',prop.typename,prop.strval()])
+        data = [(prop.idname or '',prop.typename,prop.strval()) for prop in properties]
 
         self.drawTableWidget(propertytable, headers, data)
 
