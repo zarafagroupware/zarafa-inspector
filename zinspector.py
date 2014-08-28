@@ -1,9 +1,9 @@
+#!/usr/bin/env python
 # zarafa-inspector: A GUI program which allows a user to examine MAPI properties in Zarafa and import and export data.
 #
 # Copyright 2014 Zarafa and contributors, license AGPLv3 (see LICENSE file for details)
 #
 
-#!/usr/bin/env python
 from zinspectorlib import *
 
 # PyQt4
@@ -14,292 +14,390 @@ import sys
 
 import zarafa
 from zarafa import Folder
-from MAPI.Util import *
 from MAPI.Tags import *
 
-app = QApplication(sys.argv)
-MainWindow = QMainWindow()
-ui = Ui_MainWindow()
+class ItemListView(QListView):
+    '''
+    ItemListView class
 
-def openFolder(folder, associated = False):
-    # Hide attachment table
-    ui.recordtableWidget.hide()
+    Used to draw a QListView with MAPI objects and provides a number of operations
+    on a MAPI object.
+    '''
 
-    folder = folder.data(0, Qt.UserRole).toPyObject()
-    recordlist = ui.recordlistWidget
-    recordlist.clear()
-    ui.propertytableWidget.clear()
+    def __init__(self, parent=None):
+        super(ItemListView, self).__init__(parent)
+        self.parent = self.parent()
+        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.connect(self, SIGNAL("customContextMenuRequested(QPoint)"), self.onRecordContext)
 
-    if associated:
-        folder = folder.associated
-    for record in folder.items():
-        listItem = QListWidgetItem()
-        if record.subject is None:
-            listItem.setText("<empty subject>")
-        else:
-            listItem.setText(record.subject)
-        listItem.setData(Qt.UserRole, record)
-        recordlist.addItem(listItem)
+    def onRecordContext(self, point):
+        index = self.indexAt(point)
+        record = self.model().data(index, Qt.ItemDataRole)
 
-    # Add click event for opening records
-    recordlist.itemClicked.connect(openRecord)
+        menu = QMenu("Menu",self)
 
-    # Show MAPI properties of folder
-    drawTable(folder.props())
+        if record.prop(PR_MESSAGE_CLASS).get_value().startswith('IPM.Note'):
+            menu.addAction("Save as EML", self.saveEML)
 
-def openRecord(item):
-    # Hide attachment table
-    ui.recordtableWidget.hide()
-    record = item.data(Qt.UserRole).toPyObject()
-    drawTable(record.props())
+        menu.addAction("Delete Item", self.deleteItem)
 
-def drawTable(properties):
-    headers = ["Property", "Type", "Value"]
-    propertytable = ui.propertytableWidget
-    # Convert list of properties to [[prop, type, value]]
-    data = []
-    for prop in properties:
-        data.append([prop.idname,prop.typename,prop.strval()])
+        if record.attachments():
+            menu.addAction("View attachments", self.showAttachments)
 
-    drawTableWidget(propertytable, headers, data)
+        menu.addAction("View recipients", self.showRecipients)
 
-def saveMBOX():
-    current = ui.foldertreeWidget.currentItem()
-    folder = current.data(0,Qt.UserRole).toPyObject()
-    filename = QFileDialog.getSaveFileName(MainWindow, 'Save to MBOX', '.')
+        # Show the context menu.
+        menu.exec_(self.mapToGlobal(point))
 
-    if filename != '':
-        # cast to string else mbox module breaks, since QString doesn't have endswith
-        folder.mbox(str(filename))
+    def showAttachments(self):
+        # TODO: probably nicer to split this widget in a seperate class?
+        current = self.currentIndex()
+        record = self.model().data(current, Qt.ItemDataRole)
 
-def createFolder():
-    current = ui.foldertreeWidget.currentItem()
-    folder = current.data(0,Qt.UserRole).toPyObject()
-    foldername, ok = QtGui.QInputDialog.getText(MainWindow, 'Create folder Dialog', 'New folder name:')
-    if ok and foldername != '':
-        mapifolder = folder.create_folder(str(foldername))
-        newfolder = Folder(folder.store, mapifolder.GetProps([PR_ENTRYID], MAPI_UNICODE)[0].Value)
-        item = QTreeWidgetItem(current, [foldername])
-        item.setData(0, Qt.UserRole, newfolder)
-        ui.foldertreeWidget.insertTopLevelItem(item,0)
+        attTable = self.parent.recordtableWidget
+        attTable.clear()
 
-def importEML():
-    current = ui.foldertreeWidget.currentItem()
-    folder = current.data(0,Qt.UserRole).toPyObject()
-    filename = QFileDialog.getOpenFileName(MainWindow, 'Open EML', '.', "Emails (*.eml)")
-    if filename != "":
-        fname = open(filename, 'r')
-        rfc822 = fname.read()
-        fname.close()
-        item = folder.create_item(eml=rfc822)
-        listItem = QListWidgetItem()
-        if item.subject is None:
-            listItem.setText("<empty subject>")
-        else:
-            listItem.setText(item.subject)
-        listItem.setData(Qt.UserRole, item)
-        ui.recordlistWidget.addItem(listItem)
+        attTable.setContextMenuPolicy(Qt.CustomContextMenu)
+        attTable.connect(attTable, SIGNAL("customContextMenuRequested(QPoint)"), self.onAttTableRow)
 
-def showHiddenItems():
-    current = ui.foldertreeWidget.currentItem()
-    openFolder(current, True)
+        # Draw table
+        attTable.setColumnCount(20)
+        attTable.setRowCount(len(record.attachments()))
+        attTable.setSizePolicy(QSizePolicy(QSizePolicy.Preferred,QSizePolicy.Preferred))
+        horHeaders = []
+        for n, attachment in enumerate(record.attachments()):
+            for m, prop in enumerate(attachment.props()):
+                newitem = QTableWidgetItem(prop.strval())
+                newitem.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
+                newitem.setData(Qt.UserRole, attachment)
+                attTable.setItem(n, m, newitem)
+                if n == 0:
+                    # setHorizontalHeaderLabels doesn't handle python None, so append 'None'
+                    if prop.idname is None:
+                        horHeaders.append('None')
+                    else:
+                        horHeaders.append(prop.idname)
 
-def deleteItem():
-    # select current item
-    recordlist = ui.recordlistWidget
-    current = recordlist.currentItem()
-    record = current.data(Qt.UserRole).toPyObject()
+        attTable.setHorizontalHeaderLabels(horHeaders)
+        attTable.resizeColumnsToContents()
+        attTable.show()
 
-    # Fetch selected folder, since I folder can delete an Item and the Item doesn't need to have Item.folder or Item.store
-    currentfolder = ui.foldertreeWidget.currentItem()
-    folder = currentfolder.data(0,Qt.UserRole).toPyObject()
-    folder.delete([record])
+    def showRecipients(self):
+        current = self.currentIndex()
+        record = self.model().data(current, Qt.ItemDataRole)
 
-    item = recordlist.takeItem(recordlist.row(current))
-    item = None
+        props = ['email','addrtype','name','entryid']
+        data = [(getattr(recipient,prop) for prop in props) for recipient in record.recipients()]
+        self.parent.drawTableWidget(self.parent.recordtableWidget, props, data)
 
-def saveEML():
-    current = ui.recordlistWidget.currentItem()
-    record = current.data(Qt.UserRole).toPyObject()
-    filename = QFileDialog.getSaveFileName(MainWindow, 'Save EML', '.', "Emails (*.eml)")
+    def deleteItem(self): # TODO: provide multi-select and removal
+        current = self.currentIndex()
+        record = self.model().data(current, Qt.ItemDataRole)
 
-    if filename != '':
-        rfc882 = record.eml()
-        fname = open(filename, 'w')
-        fname.write(rfc882)
-        fname.close()
+        # Fetch selected folder, since I folder can delete an Item and the Item doesn't need to have Item.folder or Item.store
+        # TODO: record.folder?
+        currentfolder = self.parent.foldertreeWidget.currentItem()
+        folder = currentfolder.data(0, Qt.UserRole).toPyObject()
+        folder.delete([record])
 
-def saveAttachment():
-    current = ui.recordtableWidget.currentItem()
-    record = current.data(Qt.UserRole).toPyObject()
+        self.model().removeItems([self.currentIndex().row()])
 
-    filename = QFileDialog.getSaveFileName(MainWindow, 'Save Attachment', '.')
-    if filename != '':
-        fname = open(filename, 'w')
-        fname.write(record.data)
-        fname.close()
+    def saveEML(self):
+        current = self.currentIndex()
+        record = self.model().data(current, Qt.ItemDataRole)
+        filename = QFileDialog.getSaveFileName(self.parent, 'Save EML', '.', "Emails (*.eml)")
 
-def onAttTableRow(point):
-    menu = QMenu("Menu", ui.recordtableWidget)
-    menu.addAction("Save attachment",saveAttachment)
-    menu.exec_(ui.recordtableWidget.mapToGlobal(point))
+        if filename != '':
+            rfc882 = record.eml()
+            fname = open(filename, 'w')
+            fname.write(rfc882)
+            fname.close()
 
-def showAttachments():
-    current = ui.recordlistWidget.currentItem()
-    record = current.data(Qt.UserRole).toPyObject()
-    attTable = ui.recordtableWidget
-    attTable.clear()
+    def saveAttachment(self):
+        current = self.parent.recordtableWidget.currentItem()
+        record = current.data(Qt.UserRole).toPyObject()
 
-    attTable.setContextMenuPolicy(Qt.CustomContextMenu)
-    attTable.connect(attTable, SIGNAL("customContextMenuRequested(QPoint)"),onAttTableRow)
+        filename = QFileDialog.getSaveFileName(self.parent, 'Save Attachment', '.')
+        if filename != '':
+            fname = open(filename, 'w')
+            fname.write(record.data)
+            fname.close()
 
-    # Draw table
-    attTable.setColumnCount(20)
-    attTable.setRowCount(len(record.attachments()))
-    attTable.setSizePolicy(QSizePolicy(QSizePolicy.Preferred,QSizePolicy.Preferred))
-    horHeaders = []
-    for n, attachment in enumerate(record.attachments()):
-        for m, prop in enumerate(attachment.props()):
-            newitem = QTableWidgetItem(prop.strval())
-            newitem.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
-            newitem.setData(Qt.UserRole, attachment)
-            attTable.setItem(n, m, newitem)
-            if n == 0:
-                # setHorizontalHeaderLabels doesn't handle python None, so append 'None'
-                if prop.idname is None:
-                    horHeaders.append('None')
-                else:
-                    horHeaders.append(prop.idname)
+    def onAttTableRow(self, point):
+        menu = QMenu("Menu", self.parent.recordtableWidget)
+        menu.addAction("Save attachment", self.saveAttachment)
+        menu.exec_(self.parent.recordtableWidget.mapToGlobal(point))
 
-    attTable.setHorizontalHeaderLabels(horHeaders)
-    attTable.resizeColumnsToContents()
-    attTable.show()
+class ItemListModel(QtCore.QAbstractListModel):
+    '''
+    class ItemListModel
 
-def showRecipients():
-    current = ui.recordlistWidget.currentItem()
-    record = current.data(Qt.UserRole).toPyObject()
+    Model which contains MAPI Objects from a MAPI Folder used by the ItemListView
+    '''
 
-    props = ['email','addrtype','name','entryid']
-    data = []
-    for recipient in record.recipients():
-        data.append([getattr(recipient,prop) for prop in props])
-    drawTableWidget(ui.recordtableWidget, props, data)
+    # TODO: make the class more intelligent and use a generator
+    numberPopulated = pyqtSignal(int)
 
-def onRecordContext(point):
-    menu = QMenu("Menu",ui.recordlistWidget)
-    item = ui.recordlistWidget.itemAt(point)
-    record = item.data(Qt.UserRole).toPyObject()
+    def __init__(self, parent=None):
+        super(ItemListModel, self).__init__(parent)
 
-    if record.prop(PR_MESSAGE_CLASS).get_value().startswith('IPM.Note'):
-        menu.addAction("Save as EML",saveEML)
+        self.itemCount = 0
+        self.itemList = []
 
-    menu.addAction("Delete Item",deleteItem)
+    def rowCount(self, parent=QtCore.QModelIndex()):
+        return self.itemCount
 
-    if record.attachments():
-        menu.addAction("View attachments",showAttachments)
+    def data(self, index, role=Qt.DisplayRole):
+        if not index.isValid():
+            return None
 
-    menu.addAction("View recipients",showRecipients)
+        if index.row() >= len(self.itemList) or index.row() < 0:
+            return None
 
-    # Show the context menu.
-    menu.exec_(ui.recordlistWidget.mapToGlobal(point))
+        if role == Qt.DisplayRole:
+            item = self.itemList[index.row()]
+            if not item.subject:
+                return 'Empty Subject'
+            else:
+                return item.subject
 
-def onFolderContext(point):
-    menu = QMenu("Menu",ui.foldertreeWidget)
-    menu.addAction("Export as MBOX",saveMBOX)
-    menu.addAction("Create new folder",createFolder)
-    menu.addAction("Import EML",importEML)
-    menu.addAction("Hidden items",showHiddenItems)
-    item = ui.foldertreeWidget.itemAt(point)
-    record = item.data(0,Qt.UserRole).toPyObject()
+        if role == Qt.ItemDataRole:
+            return self.itemList[index.row()]
 
-    menu.exec_(ui.foldertreeWidget.mapToGlobal(point))
+        return None
 
-def openUserStore(tablewidgetitem):
-    userEntry = ui.gabwidget.item(tablewidgetitem.row(), 0)
-    user = server.user(userEntry.text())
+    def canFetchMore(self, index):
+        return self.itemCount < len(self.itemList)
 
-    foldertree = ui.foldertreeWidget
-    foldertree.clear()
-    foldertree.itemClicked.connect(openFolder)
+    def fetchMore(self, index):
+        remainder = len(self.itemList) - self.itemCount
+        itemsToFetch = min(20, remainder)
 
-    # Root of the tree TODO: add this to python-zarafa as in user.store.root
-    rootnode = QTreeWidgetItem(foldertree, [user.name])
-    rootnode.setData(0, Qt.UserRole, Folder(user.store, None))
-    foldertree.parent = rootnode
-    foldertree.setItemExpanded(foldertree.parent, True)
+        self.beginInsertRows(QtCore.QModelIndex(), self.itemCount,
+                self.itemCount + itemsToFetch)
 
-    folders = []
-    for depth, folder in enumerate(user.store.folders(system=True,recurse=True)):
-        # If folder.depth is not null, we must find the parent
-        parent = foldertree.parent
-        if folder.depth != 0:
-            parentid = bin2hex(folder.prop(PR_PARENT_ENTRYID).get_value())
-            for treewidget in folders:
-                treewidgetfolder = treewidget.data(0, Qt.UserRole).toPyObject()
-                if treewidgetfolder.entryid == parentid:
-                    parent = treewidget
-                    break
+        self.itemCount += itemsToFetch
 
-        item = QTreeWidgetItem(parent, [folder.name])
-        item.setData(0, Qt.UserRole, folder)
-        if folder.name == "IPM_SUBTREE":
-            foldertree.setItemExpanded(item, True)
+        self.endInsertRows()
 
-        folders.append(item)
+        self.numberPopulated.emit(itemsToFetch)
 
-    # Setup contextmenu's
-    recordlist = ui.recordlistWidget
-    recordlist.setContextMenuPolicy(Qt.CustomContextMenu)
-    foldertree.setContextMenuPolicy(Qt.CustomContextMenu)
-    recordlist.connect(ui.recordlistWidget, SIGNAL("customContextMenuRequested(QPoint)"),onRecordContext)
-    foldertree.connect(foldertree, SIGNAL("customContextMenuRequested(QPoint)"),onFolderContext)
+    def addData(self, items):
+        self.itemList = list(items)
+        self.itemCount = 0
+        self.reset()
 
-    # Speed up recordlistwidget 
-    recordlist.setLayoutMode(QListWidget.Batched)
-    recordlist.updatesEnabled = False
-    recordlist.setUniformItemSizes(True)
+    def addItems(self, items):
+        self.beginInsertRows(QtCore.QModelIndex(), 0, len(items))
+        [self.itemList.insert(0, item) for item in items] # is this the right function?
+        self.endInsertRows()
 
-def drawGAB(server, remoteusers=False):
-    headers = ["name","fullname","email"]
-    data = []
-    for user in server.users(remote=remoteusers):
-        data.append([getattr(user,prop) for prop in headers])
-    drawTableWidget(ui.gabwidget,headers,data)
+    # TODO: also need to have an removeItems which accepts an [zarafa.Item()] for ICS
+    def removeItems(self, items):
+        for index in items:
+            self.beginRemoveRows(QtCore.QModelIndex(), index, index)
+            self.itemList.pop(index)
+            self.endRemoveRows()
 
-    ui.gabwidget.itemClicked.connect(openUserStore)
-    # hide recordtableWidget by default
-    ui.recordtableWidget.hide()
+class MyMainWindow(QMainWindow, Ui_MainWindow):
+    '''
+    class MyMainWindow
 
-def drawTableWidget(table, header, data):
-    table.setRowCount(len(data))
-    table.setColumnCount(len(header))
+    Main GUI component which renders the whole Zarafa-Inspector
 
-    for n, row in enumerate(data):
-        for m, column in enumerate(row):
-            newitem = QTableWidgetItem(str(column))
-            newitem.setFlags( QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled )
-            table.setItem(n, m, newitem)
+    '''
 
-    table.setHorizontalHeaderLabels(header)
-    table.resizeColumnsToContents()
-    table.show()
+    def __init__(self):
+        QMainWindow.__init__(self)
 
-def drawStatsTable(statsTable):
-    ui.tabWidget.setCurrentIndex(2)
-    table = server.table(statsTable)
-    drawTableWidget(ui.statstableWidget, table.header, table.data())
+        # set up User Interface (widgets, layout...)
+        self.setupUi(self)
+
+        # TODO: add option to select server
+        # TODO: what if connection fails?
+        self.server = zarafa.Server()
+
+        # Stats tab
+        self.actionUsers.triggered.connect(lambda: self.drawStatsTable(PR_EC_STATSTABLE_USERS))
+        self.actionSystem.triggered.connect(lambda: self.drawStatsTable(PR_EC_STATSTABLE_SYSTEM))
+        self.actionServers.triggered.connect(lambda: self.drawStatsTable(PR_EC_STATSTABLE_SERVERS))
+        self.actionSessions.triggered.connect(lambda: self.drawStatsTable(PR_EC_STATSTABLE_SESSIONS))
+        self.actionCompany.triggered.connect(lambda: self.drawStatsTable(PR_EC_STATSTABLE_COMPANY))
+
+        # Recordlist
+        self.recordlist = ItemListView(self)
+        # TODO: check if sizePolicy can be cleaner
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.recordlist.sizePolicy().hasHeightForWidth())
+        self.recordlist.setSizePolicy(sizePolicy)
+        self.horizontalLayout.insertWidget(1, self.recordlist)
+        QObject.connect(self.recordlist, SIGNAL("clicked(QModelIndex)"), self.openRecord)
+
+        self.drawGAB()
+
+    def drawStatsTable(self, statsTable):
+        self.tabWidget.setCurrentIndex(2)
+        table = self.server.table(statsTable)
+        self.drawTableWidget(self.statstableWidget, table.header, table.data())
+
+    def drawTableWidget(self, table, header, data):
+        table.setRowCount(len(data))
+        table.setColumnCount(len(header))
+
+        for n, row in enumerate(data):
+            for m, column in enumerate(row):
+                newitem = QTableWidgetItem()
+                if column is None: # FIXME: named properties should be shown
+                    column = str(column)
+                newitem.setData(Qt.EditRole, column)
+                newitem.setFlags( QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled )
+                table.setItem(n, m, newitem)
+
+        table.setHorizontalHeaderLabels(header)
+        table.resizeColumnsToContents()
+        table.setSortingEnabled(True)
+        table.show()
+
+    def drawGAB(self):
+        headers = ["name", "fullname", "email", "active", "home_server"]
+        data = [([getattr(user,prop) for prop in headers]) for user in self.server.users()]
+        self.drawTableWidget(self.gabwidget,headers,data)
+
+        self.gabwidget.itemClicked.connect(self.openUserStore)
+        # hide recordtableWidget by default
+        self.recordtableWidget.hide()
+
+    def openUserStore(self, tablewidgetitem):
+        userEntry = self.gabwidget.item(tablewidgetitem.row(), 0)
+        user = self.server.user(userEntry.text())
+
+        foldertree = self.foldertreeWidget
+        foldertree.clear()
+        foldertree.itemClicked.connect(self.openFolder)
+
+        # Root of the tree TODO: add this to python-zarafa as in user.store.root
+        rootnode = QTreeWidgetItem(foldertree, [user.name])
+        rootnode.setData(0, Qt.UserRole, Folder(user.store, None))
+        foldertree.parent = rootnode
+        foldertree.setItemExpanded(foldertree.parent, True)
+
+        folders = []
+        for depth, folder in enumerate(user.store.folders(system=True,recurse=True)):
+            # If folder.depth is not null, we must find the parent
+            parent = foldertree.parent
+            if folder.depth != 0:
+                parentid = bin2hex(folder.prop(PR_PARENT_ENTRYID).get_value())
+                for treewidget in folders:
+                    treewidgetfolder = treewidget.data(0, Qt.UserRole).toPyObject()
+                    if treewidgetfolder.entryid == parentid:
+                        parent = treewidget
+                        break
+
+            item = QTreeWidgetItem(parent, [folder.name])
+            item.setData(0, Qt.UserRole, folder)
+            if folder.name == "IPM_SUBTREE":
+                foldertree.setItemExpanded(item, True)
+
+            folders.append(item)
+
+        foldertree.setContextMenuPolicy(Qt.CustomContextMenu)
+        foldertree.connect(foldertree, SIGNAL("customContextMenuRequested(QPoint)"), self.onFolderContext)
+
+    def update(self, item, flags):
+        self.recordlist.model().addItems([item])
+
+    def updateFolder(self):
+        # Sync with ICS
+        folder_state = self.folder_state
+        new_state = self.folder.sync(self, folder_state) # from last known state
+        if new_state != folder_state:
+            self.folder_state = new_state
+
+    def openFolder(self, folder, associated = False):
+        self.recordtableWidget.hide()
+        self.propertytableWidget.clear()
+        folder = folder.data(0, Qt.UserRole).toPyObject()
+        if associated:
+            folder = folder.associated
+
+        model = ItemListModel(self)
+        model.addData(folder.items())
+        self.recordlist.setModel(model)
+
+        # hooking ICS for new items
+        self.folder = folder
+        self.folder_state = folder.state
+
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.updateFolder)
+        self.timer.start(1000) # 5 seconds
+         
+        # Show MAPI properties of folder
+        self.drawTable(folder.props())
+
+    def onFolderContext(self, point):
+        menu = QMenu("Menu", self.foldertreeWidget)
+        menu.addAction("Export as MBOX", self.saveMBOX)
+        menu.addAction("Create new folder", self.createFolder)
+        menu.addAction("Import EML", self.importEML) # TODO: enable once fixed
+        menu.addAction("Hidden items", self.showHiddenItems)
+        item = self.foldertreeWidget.itemAt(point)
+        record = item.data(0,Qt.UserRole).toPyObject()
+
+        menu.exec_(self.foldertreeWidget.mapToGlobal(point))
+
+    def openRecord(self, index):
+        item = index.model().data(index, role=Qt.ItemDataRole)
+        self.recordtableWidget.hide()
+        self.drawTable(item.props())
+
+    def drawTable(self, properties):
+        headers = ["Property", "Type", "Value"]
+        propertytable = self.propertytableWidget
+        # Convert list of properties to [[prop, type, value]]
+        data = [(prop.idname or '',prop.typename,prop.strval()) for prop in properties]
+
+        self.drawTableWidget(propertytable, headers, data)
+
+    def saveMBOX(self):
+        current = self.foldertreeWidget.currentItem()
+        folder = current.data(0,Qt.UserRole).toPyObject()
+        filename = QFileDialog.getSaveFileName(self, 'Save to MBOX', '.')
+
+        if filename != '':
+            # cast to string else mbox module breaks, since QString doesn't have endswith
+            folder.mbox(str(filename))
+
+    def createFolder(self):
+        current = self.foldertreeWidget.currentItem()
+        folder = current.data(0, Qt.UserRole).toPyObject()
+        foldername, ok = QtGui.QInputDialog.getText(self, 'Create folder Dialog', 'New folder name:')
+        if ok and foldername != '':
+            newfolder = folder.create_folder(str(foldername)) # TODO: cast to str really needed?
+            item = QTreeWidgetItem(current, [foldername])
+            item.setData(0, Qt.UserRole, newfolder)
+            self.foldertreeWidget.insertTopLevelItem(0, item)
+
+    def importEML(self):
+        # TODO: update to new functionality
+        current = self.foldertreeWidget.currentItem()
+        folder = current.data(0,Qt.UserRole).toPyObject()
+        filename = QFileDialog.getOpenFileName(self, 'Open EML', '.', "Emails (*.eml)")
+        if filename != "":
+            fname = open(filename, 'r')
+            rfc822 = fname.read()
+            fname.close()
+            item = folder.create_item(eml=rfc822)
+            self.recordlist.model().addItems([item])
+
+    def showHiddenItems(self):
+        current = self.foldertreeWidget.currentItem()
+        self.openFolder(current, True)
 
 if __name__ == "__main__":
-    ui.setupUi(MainWindow)
-
-    # connect to server
-    server = zarafa.Server()
-    # Stats tab
-    ui.actionUsers.triggered.connect(lambda: drawStatsTable(PR_EC_STATSTABLE_USERS))
-    ui.actionSystem.triggered.connect(lambda: drawStatsTable(PR_EC_STATSTABLE_SYSTEM))
-    ui.actionServers.triggered.connect(lambda: drawStatsTable(PR_EC_STATSTABLE_SERVERS))
-    ui.actionSessions.triggered.connect(lambda: drawStatsTable(PR_EC_STATSTABLE_SESSIONS))
-    ui.actionCompany.triggered.connect(lambda: drawStatsTable(PR_EC_STATSTABLE_COMPANY))
-    drawGAB(server)
-    MainWindow.show()
+    app = QApplication(sys.argv)
+    window = MyMainWindow()
+    window.show()
     sys.exit(app.exec_())
