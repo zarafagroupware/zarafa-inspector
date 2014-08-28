@@ -310,17 +310,14 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         foldertree.connect(foldertree, SIGNAL("customContextMenuRequested(QPoint)"), self.onFolderContext)
 
     def update(self, item, flags):
-        print "update"
         self.recordlist.model().addItems([item])
 
     def updateFolder(self):
-        # updates folder
-        print "update folder"
-        folder_state = self.folder.state
-        new_state = self.folder.sync(self(), folder_state) # from last known state
+        # Sync with ICS
+        folder_state = self.folder_state
+        new_state = self.folder.sync(self, folder_state) # from last known state
         if new_state != folder_state:
-            print "new state"
-            folder_state = new_state
+            self.folder_state = new_state
 
     def openFolder(self, folder, associated = False):
 
@@ -335,6 +332,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         self.recordlist.setModel(model)
 
         self.folder = folder
+        self.folder_state = folder.state
 
         self.timer = QTimer()
         self.timer.timeout.connect(self.updateFolder)
