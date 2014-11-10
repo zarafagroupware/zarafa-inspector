@@ -196,7 +196,8 @@ class ItemListModel(QtCore.QAbstractListModel):
     def removeItems(self, items):
         for index in items:
             self.beginRemoveRows(QtCore.QModelIndex(), index, index)
-            self.itemList.pop(index)
+            del self.itemList[index]
+            self.itemCount = self.itemCount - 1
             self.endRemoveRows()
 
 class MyMainWindow(QMainWindow, Ui_MainWindow):
@@ -305,8 +306,16 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         foldertree.setContextMenuPolicy(Qt.CustomContextMenu)
         foldertree.connect(foldertree, SIGNAL("customContextMenuRequested(QPoint)"), self.onFolderContext)
 
+    # ICS update
     def update(self, item, flags):
         self.recordlist.model().addItems([item])
+
+    # ICS delete, not implemented
+    def delete(self, item, flags):
+        pass
+        # TODO: implement removeItems[Item()]
+        #listitem = [listitem for listitem in self.recordlist.model().itemList if listitem.sourcekey == item.sourcekey]
+        #self.recordlist.model().removeItems([listitem])
 
     def updateFolder(self):
         # Sync with ICS
