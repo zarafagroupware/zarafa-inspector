@@ -151,6 +151,10 @@ class ItemListModel(QtCore.QAbstractListModel):
         if not index.isValid():
             return None
 
+        # If requisted row is bigger then we have and in range of total items, fetch it from the generator
+        if index.row() >= len(self.itemList) and index.row() <= self.totalItems:
+            [self.itemList.append(self.itemGen.next()) for _ in range(0, index.row() - len(self.itemList))]
+
         if index.row() >= len(self.itemList) or index.row() < 0:
             return None
 
@@ -167,11 +171,13 @@ class ItemListModel(QtCore.QAbstractListModel):
         return None
 
     def canFetchMore(self, index):
-        return self.itemCount < len(self.itemList)
+        #return self.itemCount < len(self.itemList)
+        return self.itemCount < self.totalItems
 
     def fetchMore(self, index):
-        remainder = len(self.itemList) - self.itemCount
-        itemsToFetch = min(20, remainder)
+        #remainder = len(self.itemList) - self.itemCount
+        remainder = self.totalItems - self.itemCount
+        itemsToFetch = min(10, remainder)
 
         self.beginInsertRows(QtCore.QModelIndex(), self.itemCount,
                 self.itemCount + itemsToFetch)
@@ -182,8 +188,12 @@ class ItemListModel(QtCore.QAbstractListModel):
 
         self.numberPopulated.emit(itemsToFetch)
 
-    def addData(self, items):
-        self.itemList = list(items)
+    def addData(self, items, total):
+        self.itemGen = items # The generator Folder.items()
+        self.totalItems = total
+
+        self.itemList = [self.itemGen.next() for _ in range(0, 20)]
+
         self.itemCount = 0
         self.reset()
 
@@ -192,6 +202,7 @@ class ItemListModel(QtCore.QAbstractListModel):
         [self.itemList.insert(0, item) for item in items] # is this the right function?
         self.endInsertRows()
         self.itemCount = self.itemCount + len(items)
+        self.totalItems = self.totalItems + len(items)
 
     # TODO: also need to have an removeItems which accepts an [zarafa.Item()] for ICS
     def removeItems(self, items):
@@ -199,6 +210,7 @@ class ItemListModel(QtCore.QAbstractListModel):
             self.beginRemoveRows(QtCore.QModelIndex(), index, index)
             del self.itemList[index]
             self.itemCount = self.itemCount - 1
+            self.totalItems = self.totalItems - 1
             self.endRemoveRows()
 
 class MyMainWindow(QMainWindow, Ui_MainWindow):
@@ -333,7 +345,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
             folder = folder.associated
 
         model = ItemListModel(self)
-        model.addData(folder.items())
+        model.addData(folder.items(), folder.count)
         self.recordlist.setModel(model)
 
         # hooking ICS for new items
