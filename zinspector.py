@@ -209,15 +209,13 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
 
     '''
 
-    def __init__(self):
+    def __init__(self, server):
         QMainWindow.__init__(self)
 
         # set up User Interface (widgets, layout...)
         self.setupUi(self)
 
-        # TODO: add option to select server
-        # TODO: what if connection fails?
-        self.server = zarafa.Server()
+        self.server = server
 
         # Stats tab
         self.actionUsers.triggered.connect(lambda: self.drawStatsTable(PR_EC_STATSTABLE_USERS))
@@ -264,7 +262,12 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
 
     def drawGAB(self):
         headers = ["name", "fullname", "email", "active", "home_server"]
-        data = [([getattr(user,prop) for prop in headers]) for user in self.server.users()]
+        # user session
+        if self.server.options.auth_user and self.server.options.auth_pass:
+            users = [self.server.user(self.server.options.auth_user)]
+        else:
+            users = self.server.users()
+        data = [([getattr(user,prop) for prop in headers]) for user in users]
         self.drawTableWidget(self.gabwidget,headers,data)
 
         self.gabwidget.itemClicked.connect(self.openUserStore)
@@ -408,6 +411,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = MyMainWindow()
+    server = zarafa.Server()
+    window = MyMainWindow(server)
     window.show()
     sys.exit(app.exec_())
