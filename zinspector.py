@@ -329,6 +329,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
     # ICS delete, not implemented
     def delete(self, item, flags):
         pass
+        # TODO: keep track of removed items which aren't added to recordlist yet, because they are still in the generator. Add code in data() to check for that list.
         # TODO: implement removeItems[Item()]
         #listitem = [listitem for listitem in self.recordlist.model().itemList if listitem.sourcekey == item.sourcekey]
         #self.recordlist.model().removeItems([listitem])
