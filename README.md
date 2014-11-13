@@ -44,3 +44,10 @@ Connect to a remote server
 =======================
 
     python zinspector.py  -s https://serverip:237/zarafa -k /etc/zarafa/ssl/server.pem -p password
+
+Using user sessions
+===================
+The Zarafa-Inspector now supports user sessions, see the example below for the usage.
+
+    python zinspector.py  -s https://serverip:237/zarafa -U user -P password
+
