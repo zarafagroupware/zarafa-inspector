@@ -142,6 +142,7 @@ class ItemListModel(QtCore.QAbstractListModel):
         super(ItemListModel, self).__init__(parent)
 
         self.itemCount = 0
+        self.removalList = []
         self.itemList = []
 
     def rowCount(self, parent=QtCore.QModelIndex()):
@@ -204,7 +205,17 @@ class ItemListModel(QtCore.QAbstractListModel):
         self.itemCount = self.itemCount + len(items)
         self.totalItems = self.totalItems + len(items)
 
-    # TODO: also need to have an removeItems which accepts an [zarafa.Item()] for ICS
+    def removeItemObjects(self, items):
+        for item in items:
+            for index, listitem in enumerate(self.itemList):
+                if item.sourcekey == listitem.sourcekey:
+                    self.beginRemoveRows(QtCore.QModelIndex(), index, index)
+                    del self.itemList[index]
+                    self.itemCount = self.itemCount - 1
+                    self.totalItems = self.totalItems - 1
+                    self.endRemoveRows()
+                    break
+
     def removeItems(self, items):
         for index in items:
             self.beginRemoveRows(QtCore.QModelIndex(), index, index)
@@ -329,10 +340,13 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
     # ICS delete, not implemented
     def delete(self, item, flags):
         pass
-        # TODO: keep track of removed items which aren't added to recordlist yet, because they are still in the generator. Add code in data() to check for that list.
-        # TODO: implement removeItems[Item()]
-        #listitem = [listitem for listitem in self.recordlist.model().itemList if listitem.sourcekey == item.sourcekey]
-        #self.recordlist.model().removeItems([listitem])
+        listitem = [listitem for listitem in self.recordlist.model().itemList if listitem.sourcekey == item.sourcekey]
+        if listitem:
+            self.recordlist.model().removeItemObjects(listitem)
+        else:
+            # Item does not exists or is still in the generator
+            self.model().removalList.append(item)
+
 
     def updateFolder(self):
         # Sync with ICS
