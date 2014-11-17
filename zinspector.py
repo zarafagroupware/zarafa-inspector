@@ -153,6 +153,7 @@ class ItemListModel(QtCore.QAbstractListModel):
             return None
 
         # If requisted row is bigger then we have and in range of total items, fetch it from the generator
+        # FIXME: code fails when a folder is empty
         if index.row() >= len(self.itemList) and index.row() <= self.totalItems:
             [self.itemList.append(self.itemGen.next()) for _ in range(0, index.row() - len(self.itemList))]
 
