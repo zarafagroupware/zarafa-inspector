@@ -284,7 +284,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
 
         # Root of the tree TODO: add this to python-zarafa as in user.store.root
         rootnode = QTreeWidgetItem(foldertree, [user.name])
-        rootnode.setData(0, Qt.UserRole, Folder(user.store, None))
+        rootnode.setData(0, Qt.UserRole, user.store.root)
         foldertree.parent = rootnode
         foldertree.setItemExpanded(foldertree.parent, True)
 
