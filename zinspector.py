@@ -153,9 +153,18 @@ class ItemListModel(QtCore.QAbstractListModel):
             return None
 
         # If requisted row is bigger then we have and in range of total items, fetch it from the generator
-        # FIXME: code fails when a folder is empty
         if index.row() >= len(self.itemList) and index.row() <= self.totalItems:
-            [self.itemList.append(self.itemGen.next()) for _ in range(0, index.row() - len(self.itemList))]
+                for _ in range(0, index.row() - len(self.itemList)):
+                    try:
+                        tmp = self.itemGenerator.next()
+                    except StopIteration: # reached end of generator
+                        break
+
+                    for remove_item in self.removalList:
+                        if tmp.sourcekey == remove_item.sourcekey:
+                            self.removalList.remove(remove_item)
+                            continue
+                    self.itemList.append(tmp)
 
         if index.row() >= len(self.itemList) or index.row() < 0:
             return None
@@ -173,11 +182,9 @@ class ItemListModel(QtCore.QAbstractListModel):
         return None
 
     def canFetchMore(self, index):
-        #return self.itemCount < len(self.itemList)
         return self.itemCount < self.totalItems
 
     def fetchMore(self, index):
-        #remainder = len(self.itemList) - self.itemCount
         remainder = self.totalItems - self.itemCount
         itemsToFetch = min(10, remainder)
 
@@ -191,10 +198,15 @@ class ItemListModel(QtCore.QAbstractListModel):
         self.numberPopulated.emit(itemsToFetch)
 
     def addData(self, items, total):
-        self.itemGen = items # The generator Folder.items()
+        self.itemGenerator = items # The generator Folder.items()
         self.totalItems = total
 
-        self.itemList = [self.itemGen.next() for _ in range(0, 20)]
+        # TODO: sloww
+        for _ in range(0, 20):
+            try:
+                self.itemList.append(self.itemGenerator.next())
+            except StopIteration: # reached end of generator
+                break
 
         self.itemCount = 0
         self.reset()
@@ -340,7 +352,6 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
 
     # ICS delete, not implemented
     def delete(self, item, flags):
-        pass
         listitem = [listitem for listitem in self.recordlist.model().itemList if listitem.sourcekey == item.sourcekey]
         if listitem:
             self.recordlist.model().removeItemObjects(listitem)
