@@ -201,12 +201,7 @@ class ItemListModel(QtCore.QAbstractListModel):
         self.itemGenerator = items # The generator Folder.items()
         self.totalItems = total
 
-        # TODO: sloww
-        for _ in range(0, 20):
-            try:
-                self.itemList.append(self.itemGenerator.next())
-            except StopIteration: # reached end of generator
-                break
+        self.itemList = [self.itemGenerator.next() for _ in range(min(20, total))]
 
         self.itemCount = 0
         self.reset()
