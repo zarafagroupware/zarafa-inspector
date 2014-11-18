@@ -135,9 +135,6 @@ class ItemListModel(QtCore.QAbstractListModel):
     Model which contains MAPI Objects from a MAPI Folder used by the ItemListView
     '''
 
-    # TODO: make the class more intelligent and use a generator
-    numberPopulated = pyqtSignal(int)
-
     def __init__(self, parent=None):
         super(ItemListModel, self).__init__(parent)
 
@@ -154,17 +151,18 @@ class ItemListModel(QtCore.QAbstractListModel):
 
         # If requisted row is bigger then we have and in range of total items, fetch it from the generator
         if index.row() >= len(self.itemList) and index.row() <= self.totalItems:
-                for _ in range(0, index.row() - len(self.itemList)):
-                    try:
-                        tmp = self.itemGenerator.next()
-                    except StopIteration: # reached end of generator
-                        break
+            # FIXME: refactor
+            for _ in range(0, index.row() - len(self.itemList)):
+                try:
+                    tmp = self.itemGenerator.next()
+                except StopIteration: # reached end of generator
+                    break
 
-                    for remove_item in self.removalList:
-                        if tmp.sourcekey == remove_item.sourcekey:
-                            self.removalList.remove(remove_item)
-                            continue
-                    self.itemList.append(tmp)
+                for remove_item in self.removalList:
+                    if tmp.sourcekey == remove_item.sourcekey:
+                        self.removalList.remove(remove_item)
+                        continue
+                self.itemList.append(tmp)
 
         if index.row() >= len(self.itemList) or index.row() < 0:
             return None
@@ -188,20 +186,15 @@ class ItemListModel(QtCore.QAbstractListModel):
         remainder = self.totalItems - self.itemCount
         itemsToFetch = min(10, remainder)
 
-        self.beginInsertRows(QtCore.QModelIndex(), self.itemCount,
-                self.itemCount + itemsToFetch)
-
+        self.beginInsertRows(QtCore.QModelIndex(), self.itemCount, self.itemCount + itemsToFetch)
         self.itemCount += itemsToFetch
-
         self.endInsertRows()
-
-        self.numberPopulated.emit(itemsToFetch)
 
     def addData(self, items, total):
         self.itemGenerator = items # The generator Folder.items()
         self.totalItems = total
 
-        self.itemList = [self.itemGenerator.next() for _ in range(min(20, total))]
+        self.itemList = [self.itemGenerator.next() for _ in range(0, min(20, total))]
 
         self.itemCount = 0
         self.reset()
