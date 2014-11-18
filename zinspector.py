@@ -282,17 +282,17 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         foldertree.clear()
         foldertree.itemClicked.connect(self.openFolder)
 
-        # Root of the tree TODO: add this to python-zarafa as in user.store.root
         rootnode = QTreeWidgetItem(foldertree, [user.name])
         rootnode.setData(0, Qt.UserRole, user.store.root)
         foldertree.parent = rootnode
         foldertree.setItemExpanded(foldertree.parent, True)
 
-        folders = []
+        folders = [] # Use hashmap instead of list for faster access
         for depth, folder in enumerate(user.store.folders(system=True,recurse=True)):
             # If folder.depth is not null, we must find the parent
             parent = foldertree.parent
             if folder.depth != 0:
+                # TODO: make python-zarafa lookup the parent user.store.inbox.parent
                 parentid = bin2hex(folder.prop(PR_PARENT_ENTRYID).get_value())
                 for treewidget in folders:
                     treewidgetfolder = treewidget.data(0, Qt.UserRole).toPyObject()
