@@ -217,7 +217,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
 
         self.server = server
 
-        # Stats tab
+        # Stats tab. FIXME: Not possible with usersession
         self.actionUsers.triggered.connect(lambda: self.drawStatsTable(PR_EC_STATSTABLE_USERS))
         self.actionSystem.triggered.connect(lambda: self.drawStatsTable(PR_EC_STATSTABLE_SYSTEM))
         self.actionServers.triggered.connect(lambda: self.drawStatsTable(PR_EC_STATSTABLE_SERVERS))
@@ -353,7 +353,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         menu.addAction("Import EML", self.importEML) # TODO: enable once fixed
         menu.addAction("Hidden items", self.showHiddenItems)
         item = self.foldertreeWidget.itemAt(point)
-        record = item.data(0,Qt.UserRole).toPyObject()
+        record = item.data(0, Qt.UserRole).toPyObject()
 
         menu.exec_(self.foldertreeWidget.mapToGlobal(point))
 
