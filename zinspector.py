@@ -392,7 +392,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
     def importEML(self):
         # TODO: update to new functionality
         current = self.foldertreeWidget.currentItem()
-        folder = current.data(0,Qt.UserRole).toPyObject()
+        folder = current.data(0, Qt.UserRole).toPyObject()
         filename = QFileDialog.getOpenFileName(self, 'Open EML', '.', "Emails (*.eml)")
         if filename != "":
             fname = open(filename, 'r')
