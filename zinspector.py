@@ -292,8 +292,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
             # If folder.depth is not null, we must find the parent
             parent = foldertree.parent
             if folder.depth != 0:
-                # TODO: make python-zarafa lookup the parent user.store.inbox.parent
-                parentid = bin2hex(folder.prop(PR_PARENT_ENTRYID).get_value())
+                parentid = folder.parent.entryid
                 if folders[parentid]:
                     parent = folders[parentid]
 
