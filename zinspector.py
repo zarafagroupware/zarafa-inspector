@@ -349,6 +349,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
     def onFolderContext(self, point):
         menu = QMenu("Menu", self.foldertreeWidget)
         menu.addAction("Export as MBOX", self.saveMBOX)
+        menu.addAction("Export as Maildir", self.saveMaildir)
         menu.addAction("Create new folder", self.createFolder)
         menu.addAction("Import EML", self.importEML) # TODO: enable once fixed
         menu.addAction("Hidden items", self.showHiddenItems)
@@ -378,6 +379,15 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         if filename != '':
             # cast to string else mbox module breaks, since QString doesn't have endswith
             folder.mbox(str(filename))
+
+    def saveMaildir(self):
+        current = self.foldertreeWidget.currentItem()
+        folder = current.data(0,Qt.UserRole).toPyObject()
+        path = QFileDialog.getExistingDirectory(self, 'Specify folder to save Maildir', '.', QFileDialog.ShowDirsOnly | QFileDialog.DontResolveSymlinks)
+
+        if path != '':
+            # cast to string else maildir module breaks, since QString doesn't have endswith
+            folder.maildir(str(path))
 
     def createFolder(self):
         current = self.foldertreeWidget.currentItem()
