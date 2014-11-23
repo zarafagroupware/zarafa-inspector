@@ -373,7 +373,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
 
     def saveMBOX(self):
         current = self.foldertreeWidget.currentItem()
-        folder = current.data(0,Qt.UserRole).toPyObject()
+        folder = current.data(0, Qt.UserRole).toPyObject()
         filename = QFileDialog.getSaveFileName(self, 'Save to MBOX', '.')
 
         if filename != '':
@@ -382,7 +382,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
 
     def saveMaildir(self):
         current = self.foldertreeWidget.currentItem()
-        folder = current.data(0,Qt.UserRole).toPyObject()
+        folder = current.data(0, Qt.UserRole).toPyObject()
         path = QFileDialog.getExistingDirectory(self, 'Specify folder to save Maildir', '.', QFileDialog.ShowDirsOnly | QFileDialog.DontResolveSymlinks)
 
         if path != '':
