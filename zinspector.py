@@ -31,7 +31,8 @@ class ItemListView(QListView):
         super(ItemListView, self).__init__(parent)
         self.parent = self.parent()
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        self.connect(self, SIGNAL("customContextMenuRequested(QPoint)"), self.onRecordContext)
+        #self.connect(self, SIGNAL("customContextMenuRequested(QPoint)"), self.onRecordContext)
+        self.customContextMenuRequested.connect(self.onRecordContext)
 
     def onRecordContext(self, point):
         index = self.indexAt(point)
@@ -100,7 +101,7 @@ class ItemListView(QListView):
         # Fetch selected folder, since I folder can delete an Item and the Item doesn't need to have Item.folder or Item.store
         # TODO: record.folder?
         currentfolder = self.parent.foldertreeWidget.currentItem()
-        folder = currentfolder.data(0, Qt.UserRole).toPyObject()
+        folder = currentfolder.data(0, Qt.UserRole)
         folder.delete([record])
 
         self.model().removeItems([self.currentIndex().row()])
@@ -118,7 +119,7 @@ class ItemListView(QListView):
 
     def saveAttachment(self):
         current = self.parent.recordtableWidget.currentItem()
-        record = current.data(Qt.UserRole).toPyObject()
+        record = current.data(Qt.UserRole)
 
         filename = QFileDialog.getSaveFileName(self.parent, 'Save Attachment', '.')
         if filename != '':
@@ -188,7 +189,6 @@ class ItemListModel(QtCore.QAbstractListModel):
     def addData(self, items):
         self.itemList = list(items)
         self.itemCount = 0
-        self.reset()
 
     def addItems(self, items):
         self.beginInsertRows(QtCore.QModelIndex(), 0, len(items))
@@ -229,14 +229,15 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
 
         # Recordlist
         self.recordlist = ItemListView(self)
-        # TODO: check if sizePolicy can be cleaner
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Preferred)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.recordlist.sizePolicy().hasHeightForWidth())
-        self.recordlist.setSizePolicy(sizePolicy)
+        # TODO: port to Qt5
+        #sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Preferred)
+        #sizePolicy.setHorizontalStretch(0)
+        #sizePolicy.setVerticalStretch(0)
+        #sizePolicy.setHeightForWidth(self.recordlist.sizePolicy().hasHeightForWidth())
+        #self.recordlist.setSizePolicy(sizePolicy)
         self.horizontalLayout.insertWidget(1, self.recordlist)
-        QObject.connect(self.recordlist, SIGNAL("clicked(QModelIndex)"), self.openRecord)
+        self.recordlist.clicked.connect(self.openRecord)
+        #QObject.connect(self.recordlist, SIGNAL("clicked(QModelIndex)"), self.openRecord)
 
         self.drawGAB()
 
@@ -288,7 +289,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         rootnode = QTreeWidgetItem(foldertree, [user.name])
         rootnode.setData(0, Qt.UserRole, user.store.root)
         foldertree.parent = rootnode
-        foldertree.setItemExpanded(foldertree.parent, True)
+        foldertree.expandItem(foldertree.parent)
 
         folders = {} # Use hashmap instead of list for faster access
         for depth, folder in enumerate(user.store.folders(system=True,recurse=True)):
@@ -302,12 +303,13 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
             item = QTreeWidgetItem(parent, [folder.name])
             item.setData(0, Qt.UserRole, folder)
             if folder.name == 'IPM_SUBTREE':
-                foldertree.setItemExpanded(item, True)
+                foldertree.expandItem(item)
 
             folders[folder.entryid] = item
 
         foldertree.setContextMenuPolicy(Qt.CustomContextMenu)
-        foldertree.connect(foldertree, SIGNAL("customContextMenuRequested(QPoint)"), self.onFolderContext)
+        #foldertree.connect(foldertree, SIGNAL("customContextMenuRequested(QPoint)"), self.onFolderContext)
+        foldertree.customContextMenuRequested.connect(self.onFolderContext)
 
     # ICS update
     def update(self, item, flags):
@@ -330,7 +332,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
     def openFolder(self, folder, associated = False):
         self.recordtableWidget.hide()
         self.propertytableWidget.clear()
-        folder = folder.data(0, Qt.UserRole).toPyObject()
+        folder = folder.data(0, Qt.UserRole)
         if associated:
             folder = folder.associated
 
@@ -357,7 +359,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         menu.addAction("Import EML", self.importEML) # TODO: enable once fixed
         menu.addAction("Hidden items", self.showHiddenItems)
         item = self.foldertreeWidget.itemAt(point)
-        record = item.data(0, Qt.UserRole).toPyObject()
+        record = item.data(0, Qt.UserRole)
 
         menu.exec_(self.foldertreeWidget.mapToGlobal(point))
 
@@ -376,7 +378,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
 
     def saveMBOX(self):
         current = self.foldertreeWidget.currentItem()
-        folder = current.data(0,Qt.UserRole).toPyObject()
+        folder = current.data(0,Qt.UserRole)
         filename = QFileDialog.getSaveFileName(self, 'Save to MBOX', '.')
 
         if filename != '':
@@ -385,7 +387,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
 
     def saveMaildir(self):
         current = self.foldertreeWidget.currentItem()
-        folder = current.data(0,Qt.UserRole).toPyObject()
+        folder = current.data(0,Qt.UserRole)
         path = QFileDialog.getExistingDirectory(self, 'Specify folder to save Maildir', '.', QFileDialog.ShowDirsOnly | QFileDialog.DontResolveSymlinks)
 
         if path != '':
@@ -394,8 +396,8 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
 
     def createFolder(self):
         current = self.foldertreeWidget.currentItem()
-        folder = current.data(0, Qt.UserRole).toPyObject()
-        foldername, ok = QtGui.QInputDialog.getText(self, 'Create folder Dialog', 'New folder name:')
+        folder = current.data(0, Qt.UserRole)
+        foldername, ok = QInputDialog.getText(self, 'Create folder Dialog', 'New folder name:')
         if ok and foldername != '':
             newfolder = folder.create_folder(str(foldername)) # TODO: cast to str really needed?
             item = QTreeWidgetItem(current, [foldername])
@@ -405,7 +407,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
     def importEML(self):
         # TODO: update to new functionality
         current = self.foldertreeWidget.currentItem()
-        folder = current.data(0, Qt.UserRole).toPyObject()
+        folder = current.data(0, Qt.UserRole)
         filename = QFileDialog.getOpenFileName(self, 'Open EML', '.', "Emails (*.eml)")
         if filename != "":
             fname = open(filename, 'r')
