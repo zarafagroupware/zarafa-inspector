@@ -38,6 +38,8 @@ class ItemListView(QListView):
 
         if record.prop(PR_MESSAGE_CLASS).get_value().startswith('IPM.Note'):
             menu.addAction("Save as EML", self.saveEML)
+        if record.prop(PR_MESSAGE_CLASS).get_value().startswith('IPM.Contact'):
+            menu.addAction("Save as vcard", self.saveVCF)
 
         menu.addAction("Delete Item", self.deleteItem)
 
@@ -101,6 +103,17 @@ class ItemListView(QListView):
         folder.delete([record])
 
         self.model().removeItems([self.currentIndex().row()])
+
+    def saveVCF(self):
+        current = self.currentIndex()
+        record = self.model().data(current, Qt.ItemDataRole)
+        filename = QFileDialog.getSaveFileName(self.parent, 'Save vcard', '.', "Vcard (*.vcf,*.vcard)")
+
+        if filename != '':
+            fname = open(filename, 'w')
+            fname.write(record.vcf())
+            fname.close()
+
 
     def saveEML(self):
         current = self.currentIndex()
