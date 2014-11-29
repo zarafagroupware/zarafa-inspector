@@ -405,7 +405,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
     def createFolder(self):
         current = self.foldertreeWidget.currentItem()
         folder = current.data(0, Qt.UserRole).toPyObject()
-        foldername, ok = QtGui.QInputDialog.getText(self, 'Create folder Dialog', 'New folder name:')
+        foldername, ok = QInputDialog.getText(self, 'Create folder Dialog', 'New folder name:')
         if ok and foldername != '':
             newfolder = folder.create_folder(str(foldername)) # TODO: cast to str really needed?
             item = QTreeWidgetItem(current, [foldername])
