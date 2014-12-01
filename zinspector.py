@@ -201,6 +201,7 @@ class ItemListModel(QtCore.QAbstractListModel):
 
     def addItems(self, items):
         self.beginInsertRows(QtCore.QModelIndex(), 0, len(items))
+        # TODO: self.itemGenerator.send()? 
         [self.itemList.insert(0, item) for item in items] # is this the right function?
         self.endInsertRows()
         self.itemCount = self.itemCount + len(items)
