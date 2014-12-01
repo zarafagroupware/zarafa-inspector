@@ -152,7 +152,7 @@ class ItemListModel(QtCore.QAbstractListModel):
         # If requisted row is bigger then we have and in range of total items, fetch it from the generator
         if index.row() >= len(self.itemList) and index.row() <= self.totalItems:
             # FIXME: refactor
-            for _ in range(0, index.row() - len(self.itemList)):
+            for _ in xrange(0, index.row() - len(self.itemList)):
                 try:
                     tmp = self.itemGenerator.next()
                 except StopIteration: # reached end of generator
@@ -194,7 +194,7 @@ class ItemListModel(QtCore.QAbstractListModel):
         self.itemGenerator = items # The generator Folder.items()
         self.totalItems = total
 
-        self.itemList = [self.itemGenerator.next() for _ in range(0, min(20, total))]
+        self.itemList = [self.itemGenerator.next() for _ in xrange(0, min(20, total))]
 
         self.itemCount = 0
         self.reset()
