@@ -404,7 +404,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         folder = current.data(0,Qt.UserRole).toPyObject()
         filename = QFileDialog.getSaveFileName(self, 'Save to MBOX', '.')
 
-        if filename != '':
+        if not filename:
             # cast to string else mbox module breaks, since QString doesn't have endswith
             folder.mbox(str(filename))
 
@@ -423,7 +423,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         current = self.foldertreeWidget.currentItem()
         folder = current.data(0,Qt.UserRole).toPyObject()
         filename = QFileDialog.getOpenFileName(self, 'Open EML', '.', "Emails (*.eml)")
-        if filename != "":
+        if not filename:
             fname = open(filename, 'r')
             rfc822 = fname.read()
             fname.close()
