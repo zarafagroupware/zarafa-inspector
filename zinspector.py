@@ -149,23 +149,21 @@ class ItemListModel(QtCore.QAbstractListModel):
         if not index.isValid():
             return None
 
+        if index.row() < 0:
+            return None
+
         # If requisted row is bigger then we have and in range of total items, fetch it from the generator
         if index.row() >= len(self.itemList) and index.row() <= self.totalItems:
-            # FIXME: refactor
-            for _ in xrange(0, index.row() - len(self.itemList)):
-                try:
-                    tmp = self.itemGenerator.next()
-                except StopIteration: # reached end of generator
+            try:
+                tmp = self.itemGenerator.next()
+            except StopIteration: # reached end of generator
+                return None
+
+            for remove_item in self.removalList:
+                if tmp.sourcekey == remove_item.sourcekey:
+                    self.removalList.remove(remove_item)
                     break
-
-                for remove_item in self.removalList:
-                    if tmp.sourcekey == remove_item.sourcekey:
-                        self.removalList.remove(remove_item)
-                        continue
-                self.itemList.append(tmp)
-
-        if index.row() >= len(self.itemList) or index.row() < 0:
-            return None
+            self.itemList.append(tmp)
 
         if role == Qt.DisplayRole:
             item = self.itemList[index.row()]
@@ -184,7 +182,7 @@ class ItemListModel(QtCore.QAbstractListModel):
 
     def fetchMore(self, index):
         remainder = self.totalItems - self.itemCount
-        itemsToFetch = min(10, remainder)
+        itemsToFetch = min(20, remainder)
 
         self.beginInsertRows(QtCore.QModelIndex(), self.itemCount, self.itemCount + itemsToFetch)
         self.itemCount += itemsToFetch
@@ -201,8 +199,7 @@ class ItemListModel(QtCore.QAbstractListModel):
 
     def addItems(self, items):
         self.beginInsertRows(QtCore.QModelIndex(), 0, len(items))
-        # TODO: self.itemGenerator.send()? 
-        [self.itemList.insert(0, item) for item in items] # is this the right function?
+        [self.itemList.insert(0, item) for item in items]
         self.endInsertRows()
         self.itemCount = self.itemCount + len(items)
         self.totalItems = self.totalItems + len(items)
@@ -346,7 +343,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
             self.recordlist.model().removeItemObjects(listitem)
         else:
             # Item does not exists or is still in the generator
-            self.model().removalList.append(item)
+            self.recordlist.model().removalList.append(item)
 
 
     def updateFolder(self):
