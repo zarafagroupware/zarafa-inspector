@@ -148,13 +148,16 @@ class ItemListModel(QtCore.QAbstractListModel):
     Model which contains MAPI Objects from a MAPI Folder used by the ItemListView
     '''
 
-    # TODO: make the class more intelligent and use a generator
-    numberPopulated = pyqtSignal(int)
-
     def __init__(self, parent=None):
         super(ItemListModel, self).__init__(parent)
 
+        # Total items in the folder
+        self.totalItems = 0
+        # Total items which are displayed
         self.itemCount = 0
+        # Items to be removed
+        self.removalList = []
+        # Items which are displayed
         self.itemList = []
 
     def rowCount(self, parent=QtCore.QModelIndex()):
@@ -164,8 +167,21 @@ class ItemListModel(QtCore.QAbstractListModel):
         if not index.isValid():
             return None
 
-        if index.row() >= len(self.itemList) or index.row() < 0:
+        if index.row() < 0:
             return None
+
+        # If requisted row is bigger then we have and in range of total items, fetch it from the generator
+        if index.row() >= len(self.itemList) and index.row() <= self.totalItems:
+            try:
+                tmp = self.itemGenerator.next()
+            except StopIteration: # reached end of generator
+                return None
+
+            for remove_item in self.removalList:
+                if tmp.sourcekey == remove_item.sourcekey:
+                    self.removalList.remove(remove_item)
+                    break
+            self.itemList.append(tmp)
 
         if role == Qt.DisplayRole:
             item = self.itemList[index.row()]
@@ -180,38 +196,49 @@ class ItemListModel(QtCore.QAbstractListModel):
         return None
 
     def canFetchMore(self, index):
-        return self.itemCount < len(self.itemList)
+        return self.itemCount < self.totalItems
 
     def fetchMore(self, index):
-        remainder = len(self.itemList) - self.itemCount
+        remainder = self.totalItems - self.itemCount
         itemsToFetch = min(20, remainder)
 
-        self.beginInsertRows(QtCore.QModelIndex(), self.itemCount,
-                self.itemCount + itemsToFetch)
-
+        self.beginInsertRows(QtCore.QModelIndex(), self.itemCount, self.itemCount + itemsToFetch)
         self.itemCount += itemsToFetch
-
         self.endInsertRows()
 
-        self.numberPopulated.emit(itemsToFetch)
+    def addData(self, items, total):
+        self.itemGenerator = items # The generator Folder.items()
+        self.totalItems = total
 
-    def addData(self, items):
-        self.itemList = list(items)
+        self.itemList = [self.itemGenerator.next() for _ in xrange(0, min(20, total))]
+
         self.itemCount = 0
         self.reset()
 
     def addItems(self, items):
         self.beginInsertRows(QtCore.QModelIndex(), 0, len(items))
-        [self.itemList.insert(0, item) for item in items] # is this the right function?
+        [self.itemList.insert(0, item) for item in items]
         self.endInsertRows()
         self.itemCount = self.itemCount + len(items)
+        self.totalItems = self.totalItems + len(items)
 
-    # TODO: also need to have an removeItems which accepts an [zarafa.Item()] for ICS
+    def removeItemObjects(self, items):
+        for item in items:
+            for index, listitem in enumerate(self.itemList):
+                if item.sourcekey == listitem.sourcekey:
+                    self.beginRemoveRows(QtCore.QModelIndex(), index, index)
+                    del self.itemList[index]
+                    self.itemCount = self.itemCount - 1
+                    self.totalItems = self.totalItems - 1
+                    self.endRemoveRows()
+                    break
+
     def removeItems(self, items):
         for index in items:
             self.beginRemoveRows(QtCore.QModelIndex(), index, index)
             del self.itemList[index]
             self.itemCount = self.itemCount - 1
+            self.totalItems = self.totalItems - 1
             self.endRemoveRows()
 
 class MyMainWindow(QMainWindow, Ui_MainWindow):
@@ -325,10 +352,13 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
 
     # ICS delete, not implemented
     def delete(self, item, flags):
-        pass
-        # TODO: implement removeItems[Item()]
-        #listitem = [listitem for listitem in self.recordlist.model().itemList if listitem.sourcekey == item.sourcekey]
-        #self.recordlist.model().removeItems([listitem])
+        listitem = [listitem for listitem in self.recordlist.model().itemList if listitem.sourcekey == item.sourcekey]
+        if listitem:
+            self.recordlist.model().removeItemObjects(listitem)
+        else:
+            # Item does not exists or is still in the generator
+            self.recordlist.model().removalList.append(item)
+
 
     def updateFolder(self):
         # Sync with ICS
@@ -345,7 +375,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
             folder = folder.associated
 
         model = ItemListModel(self)
-        model.addData(folder.items())
+        model.addData(folder.items(), folder.count)
         self.recordlist.setModel(model)
 
         # hooking ICS for new items
@@ -389,7 +419,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         folder = current.data(0, Qt.UserRole).toPyObject()
         filename = QFileDialog.getSaveFileName(self, 'Save to MBOX', '.')
 
-        if filename != '':
+        if filename:
             # cast to string else mbox module breaks, since QString doesn't have endswith
             folder.mbox(str(filename))
 
@@ -417,7 +447,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         current = self.foldertreeWidget.currentItem()
         folder = current.data(0, Qt.UserRole).toPyObject()
         filename = QFileDialog.getOpenFileName(self, 'Open EML', '.', "Emails (*.eml)")
-        if filename != "":
+        if filename:
             fname = open(filename, 'r')
             rfc822 = fname.read()
             fname.close()
