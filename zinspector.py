@@ -138,8 +138,13 @@ class ItemListModel(QtCore.QAbstractListModel):
     def __init__(self, parent=None):
         super(ItemListModel, self).__init__(parent)
 
+        # Total items in the folder
+        self.totalItems = 0
+        # Total items which are displayed
         self.itemCount = 0
+        # Items to be removed
         self.removalList = []
+        # Items which are displayed
         self.itemList = []
 
     def rowCount(self, parent=QtCore.QModelIndex()):
