@@ -40,6 +40,7 @@ class ItemListView(QListView):
             menu.addAction("Save as EML", self.saveEML)
         if record.prop(PR_MESSAGE_CLASS).get_value().startswith('IPM.Contact'):
             menu.addAction("Save as vcard", self.saveVCF)
+        # FIXME: Add export to ics item?
 
         menu.addAction("Delete Item", self.deleteItem)
 
