@@ -52,6 +52,10 @@ class ItemListView(QListView):
         # Show the context menu.
         menu.exec_(self.mapToGlobal(point))
 
+    def keyPressEvent(self, e):
+        if e.key() == Qt.Key_Delete:
+            self.deleteItem()
+
     def showAttachments(self):
         # TODO: probably nicer to split this widget in a seperate class?
         current = self.currentIndex()
