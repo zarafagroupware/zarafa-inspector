@@ -333,7 +333,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         foldertree.setItemExpanded(foldertree.parent, True)
 
         folders = {} # Use hashmap instead of list for faster access
-        for depth, folder in enumerate(user.store.folders(system=True,recurse=True)):
+        for folder in user.store.folders(system=True,recurse=True):
             # If folder.depth is not null, we must find the parent
             parent = foldertree.parent
             if folder.depth != 0:
