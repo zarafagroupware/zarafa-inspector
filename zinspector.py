@@ -335,11 +335,12 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         folders = {} # Use hashmap instead of list for faster access
         for folder in user.store.folders(system=True,recurse=True):
             # If folder.depth is not null, we must find the parent
-            parent = foldertree.parent
             if folder.depth != 0:
                 parentid = folder.parent.entryid
                 if folders[parentid]:
                     parent = folders[parentid]
+            else:
+                parent = foldertree.parent
 
             item = QTreeWidgetItem(parent, [folder.name])
             item.setData(0, Qt.UserRole, folder)
