@@ -80,10 +80,7 @@ class ItemListView(QListView):
                 attTable.setItem(n, m, newitem)
                 if n == 0:
                     # setHorizontalHeaderLabels doesn't handle python None, so append 'None'
-                    if prop.idname is None:
-                        horHeaders.append('None')
-                    else:
-                        horHeaders.append(prop.idname)
+                    horHeaders.append(str(prop.name if prop.named else prop.idname))
 
         attTable.setHorizontalHeaderLabels(horHeaders)
         attTable.resizeColumnsToContents()
@@ -416,7 +413,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         headers = ["Property", "Type", "Value"]
         propertytable = self.propertytableWidget
         # Convert list of properties to [[prop, type, value]]
-        data = [(prop.idname or '',prop.typename,prop.strval()) for prop in properties]
+        data = [(str(prop.name if prop.named else prop.idname),prop.typename,prop.strval()) for prop in properties]
 
         self.drawTableWidget(propertytable, headers, data)
 
