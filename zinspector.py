@@ -80,7 +80,7 @@ class ItemListView(QListView):
                 attTable.setItem(n, m, newitem)
                 if n == 0:
                     # setHorizontalHeaderLabels doesn't handle python None, so append 'None'
-                    horHeaders.append(str(prop.name if prop.named else prop.idname))
+                    horHeaders.append(prop.strid)
 
         attTable.setHorizontalHeaderLabels(horHeaders)
         attTable.resizeColumnsToContents()
@@ -413,8 +413,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         headers = ["Property", "Type", "Value"]
         propertytable = self.propertytableWidget
         # Convert list of properties to [[prop, type, value]]
-        # FIXME: use a function in python-zarafa to resolve the correct id
-        data = [(str(prop.name if prop.named else prop.idname),prop.typename,prop.strval) for prop in properties]
+        data = [(prop.strid, prop.typename, prop.strval) for prop in properties]
 
         self.drawTableWidget(propertytable, headers, data)
 
