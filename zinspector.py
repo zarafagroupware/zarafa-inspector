@@ -74,7 +74,7 @@ class ItemListView(QListView):
         horHeaders = []
         for n, attachment in enumerate(record.attachments()):
             for m, prop in enumerate(attachment.props()):
-                newitem = QTableWidgetItem(prop.strval())
+                newitem = QTableWidgetItem(prop.strval)
                 newitem.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
                 newitem.setData(Qt.UserRole, attachment)
                 attTable.setItem(n, m, newitem)
@@ -414,7 +414,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         propertytable = self.propertytableWidget
         # Convert list of properties to [[prop, type, value]]
         # FIXME: use a function in python-zarafa to resolve the correct id
-        data = [(str(prop.name if prop.named else prop.idname),prop.typename,prop.strval()) for prop in properties]
+        data = [(str(prop.name if prop.named else prop.idname),prop.typename,prop.strval) for prop in properties]
 
         self.drawTableWidget(propertytable, headers, data)
 
