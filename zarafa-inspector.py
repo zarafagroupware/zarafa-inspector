@@ -74,6 +74,7 @@ if __name__ == '__main__':
 
     if options.auth_user and options.auth_pass:
         server = zarafa.Server(options) # Throw exception if it fails
+        inspector = ZarafaInspector(server) # Refactor in one if?
     else:
         logindialog = LoginDialog()
         if logindialog.exec_() == QDialog.Accepted:
@@ -82,7 +83,7 @@ if __name__ == '__main__':
             # Load GUI
             inspector = ZarafaInspector(server)
 
-            sys.exit(app.exec_())
         else: # Login failed
             sys.exit(1)
+    sys.exit(app.exec_())
 
