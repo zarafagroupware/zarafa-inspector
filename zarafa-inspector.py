@@ -44,6 +44,27 @@ class LoginDialog(QDialog):
     def server(self):
         return self.zarafa_server
 
+
+class ZarafaInspector(QMainWindow):
+    def __init__(self, server):
+        super(ZarafaInspector, self).__init__()
+        self.server = server # Zarafa server object
+        self.initUI()
+
+    def initUI(self):
+        close_action = QAction('Close', self)
+        close_action.setShortcut('Ctrl+Q')
+        close_action.setStatusTip('Close Zarafa Inspector')
+        close_action.triggered.connect(self.close)
+
+        menubar = self.menuBar()
+        file_menu = menubar.addMenu('&file')
+        file_menu.addAction(close_action)
+
+        self.resize(1024, 768)
+        self.setWindowTitle('Zarafa Inspector')
+        self.show()
+
 if __name__ == '__main__':
     options, args = zarafa.parser().parse_args()
     #server = zarafa.Server()
@@ -57,7 +78,11 @@ if __name__ == '__main__':
         logindialog = LoginDialog()
         if logindialog.exec_() == QDialog.Accepted:
             server = logindialog.server
+
             # Load GUI
+            inspector = ZarafaInspector(server)
+
+            sys.exit(app.exec_())
         else: # Login failed
             sys.exit(1)
 
