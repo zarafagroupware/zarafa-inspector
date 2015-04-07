@@ -6,39 +6,15 @@ from PyQt5.QtWidgets import *
 from PyQt5 import QtGui
 
 import zarafa
+# TODO: All imports below should be removed
 from MAPI.Util import *
 from MAPI.Util.Generators import *
 import MAPI.Util.AddressBook
 import MAPI.Tags
 import _MAPICore
 
-# FIXME: move to seperate file
-class FolderTree(QTreeWidget):
-    def __init__(self, parent = None, user = None):
-        super(FolderTree, self).__init__(parent)
+from widgets import Foldertree
 
-        self.header().setHidden(True)
-        self.folders = user.store.folders()
-
-        rootnode = QTreeWidgetItem(self, [user.name])
-        rootnode.setData(0, Qt.UserRole, user.store.root)
-        self.parent = rootnode
-        self.expandItem(rootnode)
-
-        # Draw folder hierachy
-        folders = {}
-        for folder in user.store.folders(system=True, recurse=True): # XXX: configureable?
-            # FIXME: performance / cleaner method without temp dict
-            if folder.depth != 0:
-                parentid = folder.parent.entryid
-                if folders[parentid]:
-                    parent = folders[parentid]
-            else:
-                parent = self.parent
-
-            item = QTreeWidgetItem(parent, [folder.name])
-            item.setData(0, Qt.UserRole, folder)
-            folders[folder.entryid] = item
 
 # FIXME: move to seperate file
 class LoginDialog(QDialog):
@@ -102,7 +78,7 @@ class ZarafaInspector(QMainWindow):
         # User Store
         self.tab2 = QWidget()
         vbox_layout = QVBoxLayout()
-        vbox_layout.addWidget(FolderTree(user = server.user(server.options.auth_user)))
+        vbox_layout.addWidget(Foldertree.FolderTree(user = server.user(server.options.auth_user)))
         self.tab2.setLayout(vbox_layout)
         self.tabwidget.addTab(self.tab1, "GAB")
         self.tabwidget.addTab(self.tab2, "User Store")
