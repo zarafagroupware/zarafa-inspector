@@ -17,6 +17,7 @@ from widgets import Foldertree
 
 
 # FIXME: move to seperate file
+# TODO: what if server is offline?
 class LoginDialog(QDialog):
     def __init__(self, parent = None):
         super(LoginDialog, self).__init__(parent)
