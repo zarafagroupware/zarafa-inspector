@@ -13,8 +13,7 @@ import MAPI.Util.AddressBook
 import MAPI.Tags
 import _MAPICore
 
-from widgets import Foldertree
-
+from widgets import UserStoreWidget
 
 # FIXME: move to seperate file
 # TODO: what if server is offline?
@@ -71,16 +70,13 @@ class ZarafaInspector(QMainWindow):
         # TAB1: GAB => show user details and maybe GAB?
         # TAB2: FolderTree | QListView | QTableWidget
 
-        # FIXME in seperate widget?
         self.tabwidget = QTabWidget()
         self.setCentralWidget(self.tabwidget)
-        self.tab1 = QWidget()
+        self.tab1 = QWidget() # FIXME: Seperate class in seperate file
 
         # User Store
-        self.tab2 = QWidget()
-        vbox_layout = QVBoxLayout()
-        vbox_layout.addWidget(Foldertree.FolderTree(user = server.user(server.options.auth_user or server.auth_user)))
-        self.tab2.setLayout(vbox_layout)
+        self.tab2 = UserStoreWidget.UserStore(self.tabwidget, server = server)
+
         self.tabwidget.addTab(self.tab1, "GAB")
         self.tabwidget.addTab(self.tab2, "User Store")
 
@@ -90,6 +86,13 @@ class ZarafaInspector(QMainWindow):
         self.resize(1024, 768)
         self.setWindowTitle('Zarafa Inspector')
         self.show()
+
+    def openFolder(self, folder): # TODO: handle associated?
+        folder = folder.data(0, Qt.UserRole)
+        model = ItemListModel.ItemListModel(self)
+        model.addData(folder.items(), folder.count)
+        self.itemlist.setModel(model)
+
 
 if __name__ == '__main__':
     options, args = zarafa.parser().parse_args()
