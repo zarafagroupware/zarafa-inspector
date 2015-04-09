@@ -79,7 +79,7 @@ class ZarafaInspector(QMainWindow):
         # User Store
         self.tab2 = QWidget()
         vbox_layout = QVBoxLayout()
-        vbox_layout.addWidget(Foldertree.FolderTree(user = server.user(server.options.auth_user)))
+        vbox_layout.addWidget(Foldertree.FolderTree(user = server.user(server.options.auth_user or server.auth_user)))
         self.tab2.setLayout(vbox_layout)
         self.tabwidget.addTab(self.tab1, "GAB")
         self.tabwidget.addTab(self.tab2, "User Store")
