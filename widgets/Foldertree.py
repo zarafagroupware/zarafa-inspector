@@ -1,6 +1,16 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QMenu, QWidget, QAction, QInputDialog
 
+'''
+- Rename folder
+- export MBOX
+- import MBOX
+- export Maildir
+- import Maildir
+- import eml
+- show hidden items
+- show folder property's
+'''
 
 # FIXME: move to seperate file
 class FolderTree(QTreeWidget): # QTreeView?
@@ -22,7 +32,7 @@ class FolderTree(QTreeWidget): # QTreeView?
         # Draw folder hierachy
         folders = {}
         for folder in user.store.folders(system=True, recurse=True): # XXX: configureable?
-            # FIXME: performance / cleaner method without temp dict
+            # FIXME: performance / cleaner method without temp dict?
             if folder.depth != 0:
                 parentid = folder.parent.entryid
                 if folders[parentid]:
