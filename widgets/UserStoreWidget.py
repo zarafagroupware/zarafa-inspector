@@ -34,8 +34,10 @@ class UserStore(QWidget):
         self.itemlist.setModel(model)
 
     def openRecord(self, index):
+        # Seperate widget class?
+        self.propertywidget.setSortingEnabled(False)
         item = index.model().data(index, role=Qt.ItemDataRole)
-        #self.propertywidget.clear()
+        self.propertywidget.clear()
         headers = ["Property", "Type", "Value"]
         data = [(prop.strid ,prop.typename, prop.strval) for prop in item.props()]
         self.propertywidget.setRowCount(len(data))
