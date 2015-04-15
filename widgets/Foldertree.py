@@ -48,7 +48,6 @@ class FolderTree(QTreeWidget): # QTreeView?
         menu = QMenu("Menu", self)
         menu.addAction("Delete folder", self.deleteFolder)
         menu.addAction("Create folder", self.createFolder)
-
         menu.exec_(self.mapToGlobal(point))
 
     def deleteFolder(self):

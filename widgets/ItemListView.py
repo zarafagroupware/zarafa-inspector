@@ -23,15 +23,12 @@ class ItemListView(QListView):
     def onCustomContextMenu(self, point):
         index = self.indexAt(point)
         record = self.model().data(index, Qt.ItemDataRole)
-
         menu = QMenu("Menu", self)
 
         if record.message_class.startswith('IPM.Note'):
             menu.addAction("Save as EML", self.saveEML)
 
         menu.addAction("Delete Item", self.deleteItem)
-
-        # Show the context menu.
         menu.exec_(self.mapToGlobal(point))
 
     def saveEML(self):
