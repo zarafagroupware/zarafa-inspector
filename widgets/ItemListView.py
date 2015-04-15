@@ -1,6 +1,12 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QListView, QFileDialog, QMenu
 
+'''
+- export VCF, etc.
+- show Attachments
+- view recipients
+'''
+
 class ItemListView(QListView):
     '''
     ItemListView class
@@ -24,13 +30,6 @@ class ItemListView(QListView):
             menu.addAction("Save as EML", self.saveEML)
 
         menu.addAction("Delete Item", self.deleteItem)
-
-        '''
-        if record.attachments():
-            menu.addAction("View attachments", self.showAttachments)
-
-        menu.addAction("View recipients", self.showRecipients)
-        '''
 
         # Show the context menu.
         menu.exec_(self.mapToGlobal(point))
