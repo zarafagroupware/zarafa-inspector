@@ -1,5 +1,5 @@
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QTableWidget, QTableWidgetItem
+from PyQt5.QtWidgets import QWidget, QHBoxLayout, QTableWidget, QTableWidgetItem, QSizePolicy
 
 from widgets import Foldertree, ItemListView
 from models import ItemListModel
@@ -25,7 +25,7 @@ class UserStore(QWidget):
         vbox_layout.addWidget(self.foldertree)
         vbox_layout.addWidget(self.itemlist)
         vbox_layout.addWidget(self.propertywidget)
-        parent.setLayout(vbox_layout)
+        self.setLayout(vbox_layout)
 
     def openFolder(self, folder): # TODO: handle associated?
         folder = folder.data(0, Qt.UserRole)

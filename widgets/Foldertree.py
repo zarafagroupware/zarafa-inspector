@@ -1,9 +1,9 @@
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem
+from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QHeaderView
 
 
 # FIXME: move to seperate file
-class FolderTree(QTreeWidget):
+class FolderTree(QTreeWidget): # QTreeView?
     def __init__(self, parent = None, user = None):
         super(FolderTree, self).__init__(parent)
 
