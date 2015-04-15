@@ -68,6 +68,7 @@ class ZarafaInspector(QMainWindow):
 
         # QtabWidget
         # TAB1: GAB => show user details and maybe GAB?
+        # List of users | Table with props?
         # TAB2: FolderTree | QListView | QTableWidget
 
         self.tabwidget = QTabWidget()
