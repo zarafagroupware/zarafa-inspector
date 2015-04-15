@@ -33,6 +33,26 @@ class UserStore(QWidget):
         model.addData(folder.items(), folder.count)
         self.itemlist.setModel(model)
 
+        # View properties of folder
+        self.propertywidget.setSortingEnabled(False)
+        self.propertywidget.clear()
+        headers = ["Property", "Type", "Value"]
+        data = [(prop.strid ,prop.typename, prop.strval) for prop in folder.props()]
+        self.propertywidget.setRowCount(len(data))
+        self.propertywidget.setColumnCount(len(headers))
+
+        for n, row in enumerate(data):
+            for m, column in enumerate(row):
+                newitem = QTableWidgetItem()
+                newitem.setData(Qt.EditRole, column)
+                newitem.setFlags( Qt.ItemIsSelectable |  Qt.ItemIsEnabled )
+                self.propertywidget.setItem(n, m, newitem)
+
+        self.propertywidget.setHorizontalHeaderLabels(headers)
+        self.propertywidget.resizeColumnsToContents()
+        self.propertywidget.setSortingEnabled(True)
+
+
     def openRecord(self, index):
         # Seperate widget class?
         self.propertywidget.setSortingEnabled(False)
