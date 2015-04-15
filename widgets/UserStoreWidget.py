@@ -17,7 +17,7 @@ class UserStore(QWidget):
         self.propertywidget = QTableWidget()
 
         # Signals
-        self.foldertree.itemClicked.connect(self.openFolder) # Or in foldertree?
+        self.foldertree.itemClicked.connect(self.openFolder) # Or in foldertree? Hidden items???
         self.itemlist.clicked.connect(self.openRecord)
 
         # Layout
