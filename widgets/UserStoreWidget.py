@@ -34,6 +34,7 @@ class UserStore(QWidget):
         self.itemlist.setModel(model)
 
         # View properties of folder
+        # TODO: Refactor with openRecord, reduce code duplication..
         self.propertywidget.setSortingEnabled(False)
         self.propertywidget.clear()
         headers = ["Property", "Type", "Value"]
