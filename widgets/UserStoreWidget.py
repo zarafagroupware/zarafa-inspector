@@ -1,5 +1,5 @@
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QTableWidget, QTableWidgetItem, QSizePolicy
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem, QSizePolicy
 
 from widgets import Foldertree, ItemListView
 from models import ItemListModel
@@ -15,17 +15,23 @@ class UserStore(QWidget):
         self.foldertree = Foldertree.FolderTree(self, user=self.user)
         self.itemlist = ItemListView.ItemListView()
         self.propertywidget = QTableWidget()
+        self.detailpropertywidget = QTableWidget()
 
         # Signals
         self.foldertree.itemClicked.connect(self.openFolder) # Or in foldertree? Hidden items???
         self.itemlist.clicked.connect(self.openRecord)
 
         # Layout
-        vbox_layout = QHBoxLayout()
-        vbox_layout.addWidget(self.foldertree)
-        vbox_layout.addWidget(self.itemlist)
-        vbox_layout.addWidget(self.propertywidget)
+        vbox_layout = QVBoxLayout()
+        hbox_layout = QHBoxLayout()
+        hbox_layout.addWidget(self.foldertree)
+        hbox_layout.addWidget(self.itemlist)
+        hbox_layout.addWidget(self.propertywidget)
+        vbox_layout.addLayout(hbox_layout)
+        vbox_layout.addWidget(self.detailpropertywidget)
         self.setLayout(vbox_layout)
+
+        self.detailpropertywidget.hide()
 
     def openFolder(self, folder): # TODO: handle associated?
         folder = folder.data(0, Qt.UserRole)
@@ -38,7 +44,7 @@ class UserStore(QWidget):
         self.propertywidget.setSortingEnabled(False)
         self.propertywidget.clear()
         headers = ["Property", "Type", "Value"]
-        data = [(prop.strid ,prop.typename, prop.strval) for prop in folder.props()]
+        data = [(prop.strid, prop.typename, prop.strval) for prop in folder.props()]
         self.propertywidget.setRowCount(len(data))
         self.propertywidget.setColumnCount(len(headers))
 
@@ -60,7 +66,7 @@ class UserStore(QWidget):
         item = index.model().data(index, role=Qt.ItemDataRole)
         self.propertywidget.clear()
         headers = ["Property", "Type", "Value"]
-        data = [(prop.strid ,prop.typename, prop.strval) for prop in item.props()]
+        data = [(prop.strid, prop.typename, prop.strval) for prop in item.props()]
         self.propertywidget.setRowCount(len(data))
         self.propertywidget.setColumnCount(len(headers))
 
