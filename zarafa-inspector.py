@@ -13,7 +13,7 @@ import MAPI.Util.AddressBook
 import MAPI.Tags
 import _MAPICore
 
-from widgets import UserStoreWidget
+from widgets import UserStoreWidget, GABWidget
 
 # FIXME: move to seperate file
 # TODO: what if server is offline?
@@ -74,7 +74,7 @@ class ZarafaInspector(QMainWindow):
 
         self.tabwidget = QTabWidget()
         self.setCentralWidget(self.tabwidget)
-        self.tab1 = QWidget() # FIXME: Seperate class in seperate file
+        self.tab1 = GABWidget.GABWidget(server=self.server)  # FIXME: Seperate class in seperate file
 
         # User Store
         self.tab2 = UserStoreWidget.UserStore(self.tabwidget, server = server)
@@ -98,7 +98,6 @@ class ZarafaInspector(QMainWindow):
 
 if __name__ == '__main__':
     options, args = zarafa.parser().parse_args()
-    #server = zarafa.Server()
 
     # Start the app up
     app = QApplication(sys.argv)
