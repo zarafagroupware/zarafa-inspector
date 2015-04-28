@@ -30,6 +30,7 @@ class FolderTree(QTreeWidget): # QTreeView?
         self.customContextMenuRequested.connect(self.onCustomContextMenu)
 
         # Draw folder hierachy
+        # XXX: use seperate model with generator
         folders = {}
         for folder in user.store.folders(system=True, recurse=True): # XXX: configureable?
             # FIXME: performance / cleaner method without temp dict?
