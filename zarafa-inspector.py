@@ -2,7 +2,7 @@
 import sys
 
 from PyQt5.QtCore import QCoreApplication, Qt
-from PyQt5.QtWidgets import *
+from PyQt5.QtWidgets import QAction, QMainWindow, QTabWidget, QMessageBox, QDialog, QLineEdit, QPushButton, QFormLayout, QLabel, QApplication
 from PyQt5 import QtGui
 
 import zarafa
